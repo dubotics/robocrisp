@@ -214,7 +214,7 @@ main(int argc, char* argv[])
 			      {
 				std::cerr << "Accepted connection from " << endpoint << std::endl;
 				std::pair<NodeSet::iterator,bool>
-				  emplace_result ( nodes.emplace(std::move(socket), NodeRole::MASTER) );
+				  emplace_result ( nodes.emplace(std::move(socket), NodeRole::SLAVE) );
 
 				if ( emplace_result.second )
 				  {
@@ -264,7 +264,7 @@ main(int argc, char* argv[])
 	}
       else
 	{
-	  ProtocolNode<SocketType> node ( std::move(socket), NodeRole::SLAVE );
+	  ProtocolNode<SocketType> node ( std::move(socket), NodeRole::MASTER );
 	  setup_callbacks(node);
 	  node.dispatcher.configuration_response.received =
 	    [&](ProtocolNode<SocketType>& _node, const Configuration& config)
