@@ -1,3 +1,8 @@
+/** @file live-test.cc
+ *
+ * Contains example/test case for use of `ProtocolNode`, the network-connected
+ * message passer.
+ */
 #include <cstdio>
 #include <csignal>
 #include <set>
@@ -23,6 +28,10 @@ Options:\n\
   -h	Show this help.\n"
 
 
+/** Set up some generic callbacks on a ProtocolNode.
+ *
+ * @param node The node on which callbacks are to be applied.
+ */
 template < typename _SocketType >
 void setup_callbacks(ProtocolNode<_SocketType>& node)
 {
@@ -86,6 +95,9 @@ void setup_callbacks(ProtocolNode<_SocketType>& node)
     };
 }
 
+/** Block execution until one of SIGINT, SIGQUIT, or SIGTERM is sent to the
+ *  process.
+ */
 void
 wait_for_signal()
 {
@@ -113,7 +125,7 @@ int
 main(int argc, char* argv[])
 {
   using namespace Robot;
-  using namespace Robot::keywords;
+  using namespace Robot::keywords; /* for _neutral, _minimum, _maximum, etc. */
   namespace asio = boost::asio;
 
   Configuration config;
@@ -131,12 +143,21 @@ main(int argc, char* argv[])
     .add_sensor<uint16_t>({ "front proximity", SensorType::PROXIMITY, { _minimum = 50, _maximum = 500 } })
     .add_sensor<uint16_t>({ "rear proximity", SensorType::PROXIMITY, { _minimum = 50, _maximum = 500 } });
 
+
+  /** User-selectable mode to run the process as.
+   *
+   * In SERVER mode, the process listens on the given port and address for incoming connections,
+   * and spawns a new ProtocolNode instance for each incoming connection.
+   *
+   * In CLIENT mode, the process connects to an already-running process in SERVER mode.
+   */
   enum class Mode
   {
     SERVER,
     CLIENT
   } mode ( Mode::CLIENT );
 
+  /* Parse user options. */
   int c;
   while ( (c = getopt(argc, argv, "sh")) != -1 )
     switch ( c )
@@ -213,10 +234,18 @@ main(int argc, char* argv[])
 			    else
 			      {
 				std::cerr << "Accepted connection from " << endpoint << std::endl;
+
+				/* We've got a connection.  Add it to our to our set of
+				 * connected nodes, set up the callbacks we want, and
+				 * launch the node's IO threads.
+				 */
+
 				std::pair<NodeSet::iterator,bool>
 				  emplace_result ( nodes.emplace(std::move(socket), NodeRole::SLAVE) );
 
-				if ( emplace_result.second )
+				if ( emplace_result.second ) /* No such node already existed in
+								the set, so the new one was
+								added */
 				  {
 				    ProtocolNode<SocketType>&
 				      node ( const_cast<ProtocolNode<SocketType>&>(*(emplace_result.first)) );
