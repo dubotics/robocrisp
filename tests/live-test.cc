@@ -29,27 +29,27 @@ void setup_callbacks(ProtocolNode<_SocketType>& node)
   node.dispatcher.sync.sent =
     [&](ProtocolNode<_SocketType>&)
     {
-      fprintf(stderr, "[0x%0x] [1;34mSYNC[0m out\n", THREAD_ID);
+      fprintf(stderr, "[0x%0x] \033[1;34mSYNC\033[0m out\n", THREAD_ID);
     };
 
   node.dispatcher.sync.received =
     [&](ProtocolNode<_SocketType>&)
     {
-      fprintf(stderr, "[0x%0x] [1;34mSYNC[0m in\n", THREAD_ID);
+      fprintf(stderr, "[0x%0x] \033[1;34mSYNC\033[0m in\n", THREAD_ID);
     };
 
 
   node.dispatcher.handshake.sent =
     [&](ProtocolNode<_SocketType>&, const Handshake& hs)
     {
-      fprintf(stderr, "[0x%0x] [1;33mHandshake sent:[0m requested role [97m%s[0m\n", THREAD_ID,
+      fprintf(stderr, "[0x%0x] \033[1;33mHandshake sent:\033[0m requested role \033[97m%s\033[0m\n", THREAD_ID,
 	      hs.role == NodeRole::MASTER ? "MASTER" : "SLAVE");
     };
 
   node.dispatcher.handshake.received =
     [&](ProtocolNode<_SocketType>& _node, const Handshake& hs)
     {
-      fprintf(stderr, "[0x%0x] [1;33mHandshake received:[0m requests role [97m%s[0m\n", THREAD_ID,
+      fprintf(stderr, "[0x%0x] \033[1;33mHandshake received:\033[0m requests role \033[97m%s\033[0m\n", THREAD_ID,
 	      hs.role == NodeRole::MASTER ? "MASTER" : "SLAVE");
 
       HandshakeAcknowledge ack;
@@ -69,8 +69,8 @@ void setup_callbacks(ProtocolNode<_SocketType>& node)
   node.dispatcher.handshake_response.received =
     [&](ProtocolNode<_SocketType>& _node, const HandshakeResponse& hs)
     {
-      fprintf(stderr, "[0x%0x] [1;33mHandshake response received:[0m remote node %s role [97m%s[0m\n", THREAD_ID,
-	      hs.acknowledge == HandshakeAcknowledge::ACK ? "[32maccepts[0m" : "[31mrejects[0m",
+      fprintf(stderr, "[0x%0x] \033[1;33mHandshake response received:\033[0m remote node %s role \033[97m%s\033[0m\n", THREAD_ID,
+	      hs.acknowledge == HandshakeAcknowledge::ACK ? "\033[32maccepts\033[0m" : "\033[31mrejects\033[0m",
 	      hs.role == NodeRole::MASTER ? "MASTER" : (hs.role == NodeRole::SLAVE ? "SLAVE" : "ERROR"));
 
       if ( hs.acknowledge != HandshakeAcknowledge::ACK )
@@ -80,8 +80,8 @@ void setup_callbacks(ProtocolNode<_SocketType>& node)
   node.dispatcher.handshake_response.sent =
     [&](ProtocolNode<_SocketType>&, const HandshakeResponse& hs)
     {
-      fprintf(stderr, "[0x%0x] [1;33mHandshake response sent:[0m %s role [97m%s[0m\n", THREAD_ID,
-	      hs.acknowledge == HandshakeAcknowledge::ACK ? "[32maccepting[0m" : "[31mrejecting[0m",
+      fprintf(stderr, "[0x%0x] \033[1;33mHandshake response sent:\033[0m %s role \033[97m%s\033[0m\n", THREAD_ID,
+	      hs.acknowledge == HandshakeAcknowledge::ACK ? "\033[32maccepting\033[0m" : "\033[31mrejecting\033[0m",
 	      hs.role == NodeRole::MASTER ? "MASTER" : "SLAVE");
     };
 }
@@ -107,6 +107,7 @@ wait_for_signal()
   int sig = 0;
   sigwait(&sigset, &sig);
 }
+
 
 int
 main(int argc, char* argv[])

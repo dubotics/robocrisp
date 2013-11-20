@@ -7,7 +7,7 @@
    }))
 
 #define TRACE()					\
-  fprintf(stderr, "[0x%0x] [96mTRACE: [0m [97m%s[0m (0x%p)\n", THREAD_ID, __PRETTY_FUNCTION__, this)
+  fprintf(stderr, "[0x%0x] \033[96mTRACE: \033[0m \033[97m%s\033[0m (0x%p)\n", THREAD_ID, __PRETTY_FUNCTION__, this)
 
 #define MTI_FOR(n) MessageType::n, #n
 namespace Robot

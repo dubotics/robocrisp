@@ -9,8 +9,8 @@
 #include "ProtocolNode.hh"
 #include "Handshake.hh"
 
-#define TRACE()					\
-  fprintf(stderr, "[0x%0x] [96mTRACE: [0m [97m%s[0m\n", THREAD_ID, __PRETTY_FUNCTION__)
+#define TRACE()								\
+  fprintf(stderr, "[0x%0x] \033[96mTRACE: \033[0m \033[97m%s\033[0m\n", THREAD_ID, __PRETTY_FUNCTION__)
 
 #define THREAD_ID							\
   (__extension__							\
@@ -97,7 +97,7 @@ namespace Robot
     m_send.remaining_bytes = m.get_encoded_size();
 
     /* const detail::MessageTypeInfo& info ( detail::get_type_info(m.type) );
-     * fprintf(stderr, "[0x%0x] [1;33mSending message:[0m %s (%zu bytes)\n", THREAD_ID, info.name, m_send.remaining_bytes); */
+     * fprintf(stderr, "[0x%0x] \033[1;33mSending message:\033[0m %s (%zu bytes)\n", THREAD_ID, info.name, m_send.remaining_bytes); */
 
     /* Add the work item for the write operation. */
     boost::asio::async_write(m_socket, m_send_buffer, m_send.handler);
@@ -134,7 +134,7 @@ namespace Robot
 		if ( bytes_transferred > 0 )
 		  {
 		    /* const detail::MessageTypeInfo& info ( detail::get_type_info(m_send_message.type) );
-		     * fprintf(stderr, "[0x%0x] [1;33mSent message:[0m %s (%zu bytes)\n", THREAD_ID, info.name, bytes_transferred); */
+		     * fprintf(stderr, "[0x%0x] \033[1;33mSent message:\033[0m %s (%zu bytes)\n", THREAD_ID, info.name, bytes_transferred); */
 		    m_dispatch_sent_strand.post([&]{ dispatcher.dispatch(m_send_message, MessageDirection::OUTGOING); });
 		  }
 
@@ -142,7 +142,7 @@ namespace Robot
 	      }
 	  }
 	else
-	  fprintf(stderr, "[0x%0x] [1;31mwrite error: [0m%s\n", THREAD_ID, strerror(error.value()));
+	  fprintf(stderr, "[0x%0x] \033[1;31mwrite error: \033[0m%s\n", THREAD_ID, strerror(error.value()));
       }
   }
 
@@ -151,7 +151,7 @@ namespace Robot
   ProtocolNode<_SocketType>::receive_resync()
   {
     /* TRACE(); */
-    fprintf(stderr, "[0x%0x] [1;31mSync lost[0m\n", THREAD_ID);
+    fprintf(stderr, "[0x%0x] \033[1;31mSync lost\033[0m\n", THREAD_ID);
     MemoryEncodeBuffer buf ( 32 );
     Message::encode(buf, MessageType::SYNC);
 
@@ -165,7 +165,7 @@ namespace Robot
   template < typename _SocketType>
   void
   ProtocolNode<_SocketType>::receive_init()
-  { fprintf(stderr, "[0x%0x] [1;32mStarting read loop[0m\n", THREAD_ID);
+  { fprintf(stderr, "[0x%0x] \033[1;32mStarting read loop\033[0m\n", THREAD_ID);
 
     m_receive_buffer.reset();
     m_receive_step = ReceiveStep::READ_HEADER;
@@ -218,7 +218,7 @@ namespace Robot
 		      m_receive.remaining_bytes = m.length;
 
 		      /* const detail::MessageTypeInfo& info ( detail::get_type_info(m.type) );
-		       * fprintf(stderr, "[0x%0x] [1;32mReceived header:[0m length %u, type %s\n", THREAD_ID, m.length, info.name); */
+		       * fprintf(stderr, "[0x%0x] \033[1;32mReceived header:\033[0m length %u, type %s\n", THREAD_ID, m.length, info.name); */
 		    }
 		    m_receive_step = ReceiveStep::READ_TAIL_AND_ENQUEUE;
 		    break;
@@ -234,7 +234,7 @@ namespace Robot
 		      Message m ( Message::decode(db) );
 
 		      /* const detail::MessageTypeInfo& info ( detail::get_type_info(m.type) );
-		       * fprintf(stderr, "[0x%0x] [1;32mReceived message: [0m %s\n", THREAD_ID, info.name); */
+		       * fprintf(stderr, "[0x%0x] \033[1;32mReceived message: \033[0m %s\n", THREAD_ID, info.name); */
 		      
 		      if ( ! m.checksum_ok() )
 			m_receive_step = ReceiveStep::RESYNC;
@@ -252,7 +252,7 @@ namespace Robot
 		    break;
 
 		  case ReceiveStep::RESYNC:
-		    fprintf(stderr, "[0x%0x] [1;32mSynchronized.[0m\n", THREAD_ID);
+		    fprintf(stderr, "[0x%0x] \033[1;32mSynchronized.\033[0m\n", THREAD_ID);
 		    m_receive_step = ReceiveStep::READ_HEADER;
 		    m_receive.remaining_bytes = Message::HeaderSize;
 		    m_receive_buffer.reset();
@@ -266,7 +266,7 @@ namespace Robot
 	  }
 	else
 	  {
-	    fprintf(stderr, "[0x%0x] [1;31mread error: [0m%s\n", THREAD_ID, strerror(error.value()));
+	    fprintf(stderr, "[0x%0x] \033[1;31mread error: \033[0m%s\n", THREAD_ID, strerror(error.value()));
 	  }
       }
   }
@@ -280,12 +280,12 @@ namespace Robot
     if ( error != boost::asio::error::operation_aborted )
       {
 	if ( error )
-	  fprintf(stderr, "[0x%0x] [1;31msync loop error: [0m%s\n", THREAD_ID, strerror(error.value()));
+	  fprintf(stderr, "[0x%0x] \033[1;31msync loop error: \033[0m%s\n", THREAD_ID, strerror(error.value()));
 
 	if ( ! m_stopping )
 	  {
 	    send({ MessageType::SYNC });
-	    /* fprintf(stderr, "[0x%0x] [1;34mSYNC[0m\n", THREAD_ID); */
+	    /* fprintf(stderr, "[0x%0x] \033[1;34mSYNC\033[0m\n", THREAD_ID); */
 
 	    m_sync_timer.expires_from_now(boost::posix_time::seconds(SYNC_INTERVAL));
 	    m_sync_timer.async_wait(m_sync_handler);
