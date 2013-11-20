@@ -162,8 +162,24 @@ main(int argc, char* argv[])
 
   typedef asio::ip::tcp::socket SocketType;
 
-  asio::ip::tcp::endpoint target_endpoint(asio::ip::address::from_string(argv[optind]),
-					  strtoul(argv[optind + 1], NULL, 0));
+
+  /* Parse the address and port passed via the command line, and inform the user if
+     he/she is doin' it wrong. */
+  char* tail;
+  boost::system::error_code pec;
+
+  asio::ip::address address ( asio::ip::address::from_string(argv[optind], pec) );
+  int port ( strtoul(argv[optind + 1], &tail, 0) );
+
+  if ( pec )
+    { fprintf(stderr, "%s: %s (failed to parse IP address).\n", argv[optind], pec.message().c_str());
+      return 1; }
+
+  if ( *tail != '\0' )
+    { fprintf(stderr, "%s: Need integer port number.\n", argv[optind + 1]);
+      return 1; }
+
+  asio::ip::tcp::endpoint target_endpoint(address, port);
   if ( mode == Mode::SERVER )
     {
       typedef std::set<ProtocolNode<SocketType> > NodeSet;
