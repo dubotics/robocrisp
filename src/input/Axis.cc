@@ -2,6 +2,9 @@
 
 namespace input
 {
+
+  template class MappedEventSource<Axis, int32_t, double>;
+
   Axis::Axis(RawConfig _raw)
     : BaseType ( ),
       raw ( _raw ),

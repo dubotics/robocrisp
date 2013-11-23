@@ -9,6 +9,11 @@
 
 namespace input
 {
+  class Axis;
+
+  /* Declare an external instantiation of this MappedEventSource type. */
+  extern template class MappedEventSource<Axis, int32_t, double>;
+
   /** An absolute axis on an input device.  Axis supports both the linear
    *  value-mapping of MappedEventSource, and an arbitrary polynomial-expansion
    *  mapping with user-supplied polynomial coefficients.
