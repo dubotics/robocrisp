@@ -1,6 +1,9 @@
 #ifndef ArrayAccessor_hh
 #define ArrayAccessor_hh 1
 
+#include <vector>
+#include <cstddef>
+
 /** Template class for allowing array-style access -- but not deletion, insertion, etc. -- to a referenced container.
  *
  * The container must be a variable of type `_U` that provides the types
@@ -30,7 +33,6 @@
 template < typename _T, typename _U = std::vector<_T> >
 class ArrayAccessor
 {
-  /* We expect the typename _U to be deduced from  */
   static_assert(std::is_same<_T, typename _U::value_type>::value, "Value type mismatch for accessor-wrapped container");
 
   _U& m_ary;
