@@ -44,4 +44,5 @@ add_definitions(
 add_library(crisp-input STATIC
   src/input/Axis.cc
   src/input/Controller.cc
+  src/input/EvDevController.cc
   )
