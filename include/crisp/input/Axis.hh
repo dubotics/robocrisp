@@ -80,7 +80,7 @@ namespace input
     Axis(RawConfig _raw, const std::initializer_list<Value>& _coefficients);
 
     /** Move constructor for efficient construction of an axis from an
-     *	lvalue.
+     *	Rvalue reference.
      */
     Axis(Axis&& _axis);
     ~Axis();
