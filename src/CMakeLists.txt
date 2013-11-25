@@ -51,6 +51,7 @@ endif(UNIX AND NOT APPLE)
 
 add_library(crisp-input STATIC
   input/Axis.cc
+  input/Button.cc
   input/Controller.cc
   ${INPUT_PLATFORM_SOURCES}
   )
