@@ -40,7 +40,7 @@ namespace crisp
       /** Read events from the underlying hardware while a condition flag is set.  This function
        *  blocks execution.
        */
-      virtual void run(std::atomic<bool> run_flag);
+      virtual void run(const std::atomic<bool>& run_flag);
 
       /** Public, read-only accessors for private state variables.
        *@{

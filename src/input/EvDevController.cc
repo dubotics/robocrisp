@@ -95,7 +95,7 @@ namespace crisp
 
 
     void
-    EvDevController::run(std::atomic<bool> run_flag)
+    EvDevController::run(const std::atomic<bool>& run_flag)
     {
       const char* evtypes[EV_CNT] =
 	{
