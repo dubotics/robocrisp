@@ -1,12 +1,15 @@
 #include <crisp/input/Controller.hh>
 
-namespace input
+namespace crisp
 {
-  Controller::Controller()
-    : m_axes ( ),
-      axes ( m_axes )
-  {}
+  namespace input
+  {
+    Controller::Controller()
+      : m_axes ( ),
+	axes ( m_axes )
+    {}
 
-  Controller::~Controller()
-  {}
+    Controller::~Controller()
+    {}
+  }
 }
