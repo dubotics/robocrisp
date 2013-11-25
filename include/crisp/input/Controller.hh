@@ -6,6 +6,7 @@
 
 #include <crisp/util/ArrayAccessor.hh>
 #include <crisp/input/Axis.hh>
+#include <crisp/input/Button.hh>
 
 namespace crisp
 {
@@ -19,6 +20,7 @@ namespace crisp
     {
     protected:
       std::vector<Axis> m_axes;
+      std::vector<Button> m_buttons;
 
     public:
       Controller();
@@ -33,6 +35,7 @@ namespace crisp
       virtual void run(const std::atomic<bool>& run_flag) = 0;
 
       ArrayAccessor<Axis> axes;
+      ArrayAccessor<Button> buttons;
     };
   }
 }

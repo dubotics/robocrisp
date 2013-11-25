@@ -23,6 +23,8 @@ namespace crisp
 	{
 	  char buf[BUFSIZ];
 	  int sl;
+	  if ( (sl = ioctl(m_fd, EVIOCGPROP(sizeof(buf)), buf)) > 0 )
+	    fprintf(stderr, "properties: \"%s\"\n", buf);
 	  if ( (sl = ioctl(m_fd, EVIOCGNAME(sizeof(buf)), buf)) > 0 )
 	    {
 	      m_name = new char[sl];
@@ -68,6 +70,15 @@ namespace crisp
 	      m_axes.emplace_back(i, raw);
 	      m_axis_map.emplace(_axes[i].code, i);
 	    }
+
+	  /* for ( size_t i ( 0 ); i < KEY_CNT; ++i )
+	   *   {
+	   *     struct input_keymap_entry kme;
+	   *     kme.index = i;
+	   *     int r ( ioctl(m_fd, EVIOCGKEYCODE_V2, &kme) );
+	   *     fprintf(stderr, "%shave key %zu\n", r  >= 0 ? "" : "don't ", i);
+	   *     
+	   *   } */
 	}
 
     }
@@ -104,7 +115,7 @@ namespace crisp
 	  "relative",
 	  "absolute",
 	  "misc",
-	  "software",
+	  "switch",
 	  NULL,
 	  NULL,
 	  NULL,
@@ -142,7 +153,7 @@ namespace crisp
 
 		default:
 		  if ( ev.type != EV_SYN )
-		    fprintf(stderr, "got %s event: code %d, value %d\n", evtypes[ev.type], ev.code, ev.value);
+		    fprintf(stderr, "got %s event: code %d (0x%x), value %d (0x%x)\n", evtypes[ev.type], ev.code, ev.code, ev.value, ev.value);
 		  break;
 		}
 	    }
