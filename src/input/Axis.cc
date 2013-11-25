@@ -7,16 +7,16 @@ namespace crisp
 
     template class MappedEventSource<Axis, int32_t, double>;
 
-    Axis::Axis(RawConfig _raw)
-      : BaseType ( ),
+    Axis::Axis(Axis::ID _id, RawConfig _raw)
+      : BaseType ( _id ),
 	raw ( _raw ),
 	map_method ( MapMethod::LINEAR ),
 	coefficients ( )
     {
     }
 
-    Axis::Axis(RawConfig _raw, const std::initializer_list<Value>& _coefficients)
-      : BaseType ( ),
+    Axis::Axis(Axis::ID _id, RawConfig _raw, const std::initializer_list<Value>& _coefficients)
+      : BaseType ( _id ),
 	raw ( _raw ),
 	map_method ( MapMethod::POLYNOMIAL ),
 	coefficients ( )
@@ -38,6 +38,8 @@ namespace crisp
     void
     Axis::set_coefficients(const std::initializer_list<Value>& list)
     {
+      map_method = MapMethod::POLYNOMIAL;
+
       /* Here we just need to copy the values in `list` to `coefficients` in
 	 reverse order.
 

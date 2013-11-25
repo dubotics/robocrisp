@@ -29,35 +29,36 @@ namespace crisp
       typedef _RawValue RawValue;	/**< Type of _raw_ (unmapped) values for events
 					   from this source. */
 
+      typedef unsigned int ID;
+
       /** Type for objects that represent a signal-handler's (callback's)
 	  connection to its signal source. */
       typedef boost::signals2::connection Connection;
 
-
-      /** "Raw" signal type.  This signal type is used to notify that new raw
-       *  values have been recieved, and is the kind of signal to which hook_raw
-       *  connects callbacks.
-       */
-      typedef typename boost::signals2::signal<void(const Type&, RawValue)>
-      RawSignal;
-
-
-      /** "Full" signal type. This is the type of signal to which hook_full
-       *	connects callbacks.
+      /** Signal type. This is the type of signal to which `hook` connects
+       *  callbacks.
        */
       typedef boost::signals2::signal<void(const Type&, RawValue, Value)>
-      FullSignal;
+      Signal;
 
 
-      MappedEventSource() = default;
+      /** Basic constructor.
+       * @param _id ID code for this object.
+       */
+      MappedEventSource(ID _id)
+        : id ( m_id ),
+	  m_id ( _id ),
+	  m_signal ( )
+      {}
+
 
       /** Move constructor. */
       MappedEventSource(MappedEventSource&& mes)
-      : m_raw_signal ( ),
-	m_full_signal ( )
+        : id ( m_id ),
+	  m_id ( std::move(mes.m_id) ),
+	  m_signal ( )
       {
-	m_raw_signal.swap(mes.m_raw_signal);
-	m_full_signal.swap(mes.m_full_signal);
+	m_signal.swap(mes.m_signal);
       }
 
       /** Defaulted virtual destructor provided for polymorphic use of derived
@@ -82,21 +83,11 @@ namespace crisp
        * @param raw_value The raw value read from the underlying hardware.
        */
       void
-      /* TODO: should this be implemented to handle new input values in a separate
-	 thread? */
-      post(RawValue raw_value);
-
-
-      /** Connect a callback triggered on "raw" input events.  This method is
-       *  called before any mapping takes place.
-       *
-       * @param callback A that should be invoked whenever raw data is received.
-       *
-       * @return A connection object that can be used to disconnect the callback
-       *     from the source signal.
-       */
-      Connection hook_raw(typename RawSignal::slot_type callback)
-      { return m_raw_signal.connect(callback); }
+      post(RawValue raw_value)
+      {
+	Value mapped_value ( map(raw_value) );
+	m_signal(static_cast<const Type&>(*this), raw_value, mapped_value);
+      }
 
 
       /** Connect a callback to be called on input events with both unmapped and
@@ -108,14 +99,15 @@ namespace crisp
        * @return A connection object that can be used to disconnect the callback
        *     from the source signal.
        */
-      Connection hook_full(typename FullSignal::slot_type callback)
-      { return m_full_signal.connect(callback); }
+      Connection hook(typename Signal::slot_type callback)
+      { return m_signal.connect(callback); }
 
 
+
+      const ID& id;
     private:
-      RawSignal m_raw_signal;	/**< Signal object used to manage raw-event */
-      FullSignal m_full_signal;
-
+      Signal m_signal;
+      ID m_id;
     };
   }
 }

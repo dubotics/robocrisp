@@ -64,7 +64,7 @@ namespace crisp
        *     _initialize_ the axis' "raw" field; i.e. the passed configuration may
        *     be modified post-construction.
        */
-      Axis(RawConfig _raw);
+      Axis(ID _id, RawConfig _raw);
 
       /** Initialize an axis with polynomial-expansion mapping.
        *
@@ -79,7 +79,7 @@ namespace crisp
        * 	   the highest power of the input variable, and the last to the zeroth
        * 	   power of the input variable (i.e., to a constant offset).
        */
-      Axis(RawConfig _raw, const std::initializer_list<Value>& _coefficients);
+      Axis(ID _id, RawConfig _raw, const std::initializer_list<Value>& _coefficients);
 
       /** Move constructor for efficient construction of an axis from an
        *	Rvalue reference.

@@ -65,7 +65,7 @@ namespace crisp
 	    {
 	      struct input_absinfo& info ( _axes[i].info );
 	      Axis::RawConfig raw { info.value, info.minimum, info.maximum,  info.fuzz, info.flat };
-	      m_axes.emplace_back(raw);
+	      m_axes.emplace_back(i, raw);
 	      m_axis_map.insert(std::make_pair(_axes[i].index, i));
 	    }
 	}
