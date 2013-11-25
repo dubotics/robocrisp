@@ -15,5 +15,21 @@ add_library(crisp-comms STATIC
   comms/ModuleInput.cc
   comms/Sensor.cc
   )
-
 target_link_libraries(crisp-comms ${Boost_SYSTEM_LIBRARY_RELEASE} pthread)
+
+if(UNIX)
+  # Assume Linux, since CMake doesn't provide a Linux-specific variable...
+  list(APPEND INPUT_PLATFORM_SOURCES
+    input/EvDevController.cc
+    )
+elseif(WIN32)
+  list(APPEND INPUT_PLATFORM_SOURCES
+    ) # No Windows-specific source files for now...
+endif(UNIX)
+
+add_library(crisp-input STATIC
+  input/Axis.cc
+  input/Controller.cc
+  ${INPUT_PLATFORM_SOURCES}
+  )
+
