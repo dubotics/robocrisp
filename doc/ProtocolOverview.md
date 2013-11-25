@@ -148,6 +148,18 @@ See `tests/live-test.cc` for an example client/server implementation based on
 `ProtocolNode`.
 
 
+## Dynamic type support?
+
+Within the CRISP sources there exist several classes (`APIElement`, `DataStructure`,
+`DataField`) that are not currently used in the comms library.  These classes build on the
+encodability concepts related above, with the goal of providing a similar discoverable-interface
+capability.  Here, however, the user would not be restricted to the provided encodable types ---
+provided instead is a class to _describe_ custom data-structures.
+
+The end-goal is a code-generator so we can achieve native performance via dynamically-compiled
+modules.  But this project may have to wait until the Crisp architecture is more mature.
+There's no build target for it right now, but you can get a taste of the intended direction from
+`tests/structure-test.cc`.
 
 ### Comms code status
 
