@@ -11,9 +11,9 @@ namespace crisp
 {
   namespace input
   {
-    class Axis;
 
     /* Declare an external instantiation of this MappedEventSource type. */
+    class Axis;
     extern template class MappedEventSource<Axis, int32_t, double>;
 
     /** An absolute axis on an input device.  Axis supports both the linear
@@ -28,16 +28,16 @@ namespace crisp
       enum class MapMethod
       {
 	LINEAR,			/**< Only the base linear mapping is used. */
-	  POLYNOMIAL		/**< After linear mapping, a polynomial
+	POLYNOMIAL		/**< After linear mapping, a polynomial
 				   expansion with user-supplied coefficients is
 				   applied. */
-	  };
+      };
 
       /** Information used to map a raw value to its linear axis value. */
       struct RawConfig
       {
 	int32_t
-        neutral,	/**< Neutral value for raw event values on this axis. */
+          neutral,	/**< Neutral value for raw event values on this axis. */
 	  minimum,	/**< Minimum value for raw event values on this axis. */
 	  maximum,	/**< Maximum value for raw event values on this axis. */
 	  deadzone_lower,	/**< Lower deadzone value. */
@@ -88,7 +88,8 @@ namespace crisp
       ~Axis();
 
 
-      /** Set the coefficients used for the polynomial-expansion mapping.
+      /** Set the coefficients used for the polynomial-expansion mapping, and
+       * set the axis to use that mapping method.
        *
        * @param list A list of N + 1 coefficients for an Nth-order polynomial.
        * 	   The first coefficient given corresponds to the highest power of the
