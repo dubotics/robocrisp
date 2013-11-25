@@ -1,0 +1,5 @@
+# Ignore the build subdirectory.
+build
+
+# Ignore all those pesky pre-revision-control *~ backup files.
+*~
