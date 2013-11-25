@@ -1,4 +1,4 @@
-#include "DataStructure.hh"
+#include <crisp/comms/DataStructure.hh>
 using namespace Robot;
 
 #define ELEMENT_FIELDS (1 << 3)

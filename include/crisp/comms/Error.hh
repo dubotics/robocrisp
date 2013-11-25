@@ -1,8 +1,10 @@
 #ifndef Robot_Error_hh
 #define Robot_Error_hh 1
 
-namespace Robot
+namespace crisp
 {
+  namespace comms
+  {
   typedef uint8_t ErrorCategory;
   typedef uint8_t ErrorCode;
 
@@ -15,6 +17,7 @@ namespace Robot
     const char* message;
     const char* source;
   };
+  }
 }
 
 #endif	/* Robot_Error_hh */

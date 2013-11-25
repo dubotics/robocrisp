@@ -1,10 +1,8 @@
 #ifndef DataDeclarationBase_hh
 #define DataDeclarationBase_hh 1
 
-#include <cmath>		/* for isnan */
-
-#include "common.hh"
-#include "Buffer.hh"
+#include <crisp/comms/common.hh>
+#include <crisp/comms/Buffer.hh>
 #include <limits>
 
 #ifdef SWIG
@@ -16,39 +14,41 @@
 #define DATA_DECLARATION_BASE_COMMON_FUNCS()				\
   EncodeResult								\
   encode(EncodeBuffer& buf) const					\
-  { return Robot::detail::DataDeclarationBase::encode(*this, buf); }	\
+  { return crisp::comms::detail::DataDeclarationBase::encode(*this, buf); }	\
 									\
   DecodeResult								\
   decode(DecodeBuffer& buf)						\
-  { Robot::detail::DataDeclarationBase::decode<typename std::remove_reference<Type>::type>(reinterpret_cast<TranscodeAsType*>(this), buf); \
+  { crisp::comms::detail::DataDeclarationBase::decode<typename std::remove_reference<Type>::type>(reinterpret_cast<TranscodeAsType*>(this), buf); \
     return DecodeResult::SUCCESS; }					\
 									\
   static inline TranscodeAsType						\
   decode_copy(DecodeBuffer& buf)					\
   {  TranscodeAsType out;						\
-    Robot::detail::DataDeclarationBase::decode<typename std::remove_reference<Type>::type>(&out, buf); \
+    crisp::comms::detail::DataDeclarationBase::decode<typename std::remove_reference<Type>::type>(&out, buf); \
     return out; }							\
 									\
   inline EncodeResult							\
   encode_tail(EncodeBuffer& buf) const					\
-  { return Robot::detail::DataDeclarationBase::encode_tail(*this, buf); } \
+  { return crisp::comms::detail::DataDeclarationBase::encode_tail(*this, buf); } \
 									\
 									\
   inline DecodeResult							\
   decode_tail(DecodeBuffer& buf)					\
-  { return Robot::detail::DataDeclarationBase::decode_tail(*this, buf); } \
+  { return crisp::comms::detail::DataDeclarationBase::decode_tail(*this, buf); } \
 									\
   inline size_t								\
   get_tail_size() const							\
-  { return Robot::detail::DataDeclarationBase::get_tail_size(*this); }	\
+  { return crisp::comms::detail::DataDeclarationBase::get_tail_size(*this); }	\
 									\
   size_t								\
   get_encoded_size() const						\
-  { return Robot::detail::DataDeclarationBase::get_encoded_size(*this); }
+  { return crisp::comms::detail::DataDeclarationBase::get_encoded_size(*this); }
 
 
-namespace Robot
+namespace crisp
 {
+  namespace comms
+  {
   namespace detail
   {
 #ifndef SWIG
@@ -626,6 +626,7 @@ namespace Robot
       maximum_value;
   };
 #endif
+  }
 }
 
 #endif	/* DataDeclarationBase_hh */

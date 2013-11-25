@@ -53,7 +53,7 @@ namespace crisp
  * intended to be called directly.
  */
 inline void
-intrusive_ptr_add_ref(spt::RefCountedObject* __rco)
+intrusive_ptr_add_ref(crisp::util::RefCountedObject* __rco)
 {
   __rco->refCount++;
 }
@@ -65,7 +65,7 @@ intrusive_ptr_add_ref(spt::RefCountedObject* __rco)
  * intended to be called directly.
  */
 inline void
-intrusive_ptr_release(spt::RefCountedObject* __rco)
+intrusive_ptr_release(crisp::util::RefCountedObject* __rco)
 {
   __rco->refCount--;
 

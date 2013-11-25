@@ -2,15 +2,17 @@
 #define DataValue_hh 1
 
 #include <type_traits>
-#include "config.h"
-#include "DataDeclaration.hh"
+#include <crisp/comms/config.h>
+#include <crisp/comms/DataDeclaration.hh>
 
 #if defined(ENABLE_ASSERT) && ENABLE_ASSERT
 #  include <cassert>
 #endif
 
-namespace Robot
+namespace crisp
 {
+  namespace comms
+  {
   /* ****************************************************************
    * DataValue
    */
@@ -119,6 +121,7 @@ namespace Robot
     DataDeclaration<_T> data_type;
     _T value;
   };
+  }
 }
 
 #endif	/* DataValue_hh */

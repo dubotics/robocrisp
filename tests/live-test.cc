@@ -7,12 +7,12 @@
 #include <csignal>
 #include <set>
 
-#include "Sensor.hh"
-#include "Module.hh"
-#include "ModuleControl.hh"
-#include "Configuration.hh"
-#include "ProtocolNode.hh"
-#include "Handshake.hh"
+#include <crisp/comms/ProtocolNode.hh>
+#include <crisp/comms/Sensor.hh>
+#include <crisp/comms/Module.hh>
+#include <crisp/comms/ModuleControl.hh>
+#include <crisp/comms/Configuration.hh>
+#include <crisp/comms/Handshake.hh>
 
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/connect.hpp>
@@ -27,6 +27,8 @@ Options:\n\
 	If this flag is NOT given, client mode is assumed.\n\
   -h	Show this help.\n"
 
+
+using namespace crisp::comms;
 
 /** Set up some generic callbacks on a ProtocolNode.
  *
@@ -124,8 +126,7 @@ wait_for_signal()
 int
 main(int argc, char* argv[])
 {
-  using namespace Robot;
-  using namespace Robot::keywords; /* for _neutral, _minimum, _maximum, etc. */
+  using namespace crisp::comms::keywords; /* for _neutral, _minimum, _maximum, etc. */
   namespace asio = boost::asio;
 
   Configuration config;

@@ -2,7 +2,7 @@
 #define decl_defn_macros_hh 1
 
 #include <cstdio>
-#include "Buffer.hh"
+#include <crisp/comms/Buffer.hh>
 
 #define NAMED_TYPED_COMMON_FUNC_INLINES()				\
   inline void								\

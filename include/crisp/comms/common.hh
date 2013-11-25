@@ -7,7 +7,7 @@
 #include <cstring>
 #include <type_traits>
 
-#include "config.h"
+#include <crisp/comms/config.h>
 
 
 /* Huh, why is this required?
@@ -52,22 +52,22 @@ namespace crisp
 {
   namespace comms
   {
-  ENUM_CLASS(NodeRole,uint8_t,
-	     MASTER = 0,
-	     SLAVE);
+    ENUM_CLASS(NodeRole,uint8_t,
+	       MASTER = 0,
+	       SLAVE);
 
-  ENUM_CLASS(DecodeResult, uint8_t,
-	     SUCCESS = 0,
-	     BUFFER_UNDERFLOW,
-	     INVALID_DATA
-	     );
+    ENUM_CLASS(DecodeResult, uint8_t,
+	       SUCCESS = 0,
+	       BUFFER_UNDERFLOW,
+	       INVALID_DATA
+	       );
 
-  ENUM_CLASS(EncodeResult, uint8_t,
-	     SUCCESS = 0,
-	     INSUFFICIENT_SPACE,
-	     CONSISTENCY_ERROR,
-	     STREAM_ERROR
-	     );
+    ENUM_CLASS(EncodeResult, uint8_t,
+	       SUCCESS = 0,
+	       INSUFFICIENT_SPACE,
+	       CONSISTENCY_ERROR,
+	       STREAM_ERROR
+	       );
   }
 }
 

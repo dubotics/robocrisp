@@ -3,10 +3,12 @@
 
 #include <type_traits>
 #include <functional>
-#include "config.h"
+#include <crisp/comms/config.h>
 
-namespace Robot
+namespace crisp
 {
+  namespace comms
+  {
   template < typename _SocketType > class ProtocolNode;
   struct Message;
 
@@ -29,7 +31,7 @@ namespace Robot
 
   template < typename _BodyType, typename _SocketType >
   struct
-  MessageHandler<_BodyType, _SocketType, typename std::enable_if<std::is_same<_BodyType, Robot::Message>::value, _BodyType>::type>
+  MessageHandler<_BodyType, _SocketType, typename std::enable_if<std::is_same<_BodyType, crisp::comms::Message>::value, _BodyType>::type>
   {
     typedef std::function<void(ProtocolNode<_SocketType>&,const Message&)> HandlerFunction;
     HandlerFunction
@@ -48,6 +50,7 @@ namespace Robot
       received;
   };
 
+  }
 }
 
 #endif	/* MessageHandler_hh */

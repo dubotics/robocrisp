@@ -3,15 +3,15 @@
 #include <cassert>
 #include <cmath>		/* for M_PI_2 */
 
-#include "timeutil.h"
-#include "common.hh"
-#include "Sensor.hh"
-#include "Module.hh"
-#include "ModuleControl.hh"
-#include "Configuration.hh"
-#include "Handshake.hh"
+#include <crisp/util/timeutil.h>
+#include <crisp/comms/common.hh>
+#include <crisp/comms/Sensor.hh>
+#include <crisp/comms/Module.hh>
+#include <crisp/comms/ModuleControl.hh>
+#include <crisp/comms/Configuration.hh>
+#include <crisp/comms/Handshake.hh>
 
-using namespace Robot;
+using namespace crisp::comms;
 
 #include <typeinfo>
 #include <cxxabi.h>
@@ -145,7 +145,7 @@ test_message_encode(const _T& x, _Args&&... args)
   Message m(x);
   assert(m.type == _T::Type);
 
-  const Robot::detail::MessageTypeInfo& type_info ( Robot::detail::get_type_info(m.type) );
+  const detail::MessageTypeInfo& type_info ( detail::get_type_info(m.type) );
 
   m.encode(eb);
   fprintf(stderr, "%s\n  encoded message: ", __PRETTY_FUNCTION__);
@@ -175,7 +175,7 @@ test_message_encode(const _T& x, _Args&&... args)
 int
 main(int, char*[])
 {
-  using namespace Robot::keywords;
+  using namespace crisp::comms::keywords;
 
 
   Configuration config;

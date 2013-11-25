@@ -1,8 +1,9 @@
 #ifndef ModuleInput_hh
 #define ModuleInput_hh 1
 
-#include "decl-defn-macros.hh"
-#include "DataDeclaration.hh"
+#include <crisp/comms/decl-defn-macros.hh>
+#include <crisp/comms/DataDeclaration.hh>
+#include <crisp/util/arith.hh>
 
 #ifdef SWIG
 #  define __attribute__(x)
@@ -10,8 +11,10 @@
 %include "decl-defn-macros.hh"
 #endif
 
-namespace Robot
+namespace crisp
 {
+  namespace comms
+  {
   ENUM_CLASS(ModuleInputMode, uint8_t,
 	     ABSOLUTE,
 	     RELATIVE
@@ -30,9 +33,9 @@ namespace Robot
 #define MODULE_INPUT_COMMON_FUNCS()					\
   bool operator ==(const ModuleInput& o) const				\
   {									\
-    return input_id == o.input_id && /* mode == o.mode && */	\
-      p_abs(name_length) == p_abs(o.name_length) && data_type == o.data_type && \
-      (name_length == 0 || ! memcmp(name, o.name, p_abs(name_length))); \
+    return input_id == o.input_id && /* mode == o.mode && */		\
+      crisp::util::p_abs(name_length) == crisp::util::p_abs(o.name_length) && data_type == o.data_type && \
+      (name_length == 0 || ! memcmp(name, o.name, crisp::util::p_abs(name_length))); \
   }
 
 
@@ -165,6 +168,7 @@ namespace Robot
     const char* name;
   };
 #endif
+  }
 }
 
 #endif	/* ModuleInput_hh */

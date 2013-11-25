@@ -1,8 +1,8 @@
 #ifndef DataFieldBase_hh
 #define DataFieldBase_hh 1
 
-#include "DataDeclarationBase.hh"
-#include "APIElement.hh"
+#include <crisp/comms/DataDeclarationBase.hh>
+#include <crisp/comms/APIElement.hh>
 
 #define DATA_FIELD_COMMON_DECLS()					\
   using APIElement::symbol;						\
@@ -23,8 +23,10 @@
   using BaseType::decode_copy;						\
   using BaseType::get_encoded_size;
 
-namespace Robot
+namespace crisp
 {
+  namespace comms
+  {
   /** Generic data field representation. */
   template < typename _ValueType >
   struct __attribute__ (( packed ))
@@ -135,6 +137,7 @@ namespace Robot
       {}
   };
 
+  }
 }
 
 #endif	/* DataFieldBase_hh */
