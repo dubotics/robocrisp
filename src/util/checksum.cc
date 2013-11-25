@@ -1,4 +1,4 @@
-#include "checksum.hh"
+#include <crisp/util/checksum.hh>
 
 /* For information on how this table was generated, see pretty much any good CRC32 reference
    implementation.
@@ -57,10 +57,13 @@ update_crc32(uint32_t crc, const unsigned char *buf, size_t len)
   return c;
 }
 
-namespace Robot
+namespace crisp
 {
-  uint32_t crc32(const void* data, size_t length)
+  namespace util
   {
-    return update_crc32(0xffffffffL, reinterpret_cast<const unsigned char*>(data), length) ^ 0xffffffffL;
+    uint32_t crc32(const void* data, size_t length)
+    {
+      return update_crc32(0xffffffffL, reinterpret_cast<const unsigned char*>(data), length) ^ 0xffffffffL;
+    }
   }
 }
