@@ -60,8 +60,7 @@ namespace crisp
     }
 #endif
 
-    struct __attribute__ (( packed, align(1) ))
-    Message
+    struct Message
     {
       /** Default constructor. */
       Message();
@@ -73,25 +72,18 @@ namespace crisp
 
       Message(const Message&);
 
-      template < typename _T,
-		 typename _Enable = typename std::enable_if<!std::is_same<_T,crisp::comms::Message>::value>::type >
-	Message(const _T& _body)
-	: Message(std::move(_body))
-      {}
-
       template < typename _T, typename _U = typename std::remove_reference<_T>::type,
 		 typename _Enable = typename std::enable_if<!std::is_same<_U,crisp::comms::Message>::value>::type>
       Message(_T&& _body)
-      : Message()
-		 {
-		   const detail::MessageTypeInfo& info ( detail::get_type_info(_U::Type) );
-		   type = _U::Type;
-		   MemoryEncodeBuffer eb ( _body.get_encoded_size() );
-		   _body.encode(eb);
-		   body.reset(Buffer::copy_new(eb.data, eb.length));
-		   length = _body.get_encoded_size() + (info.has_checksum ? MESSAGE_CHECKSUM_SIZE : 0);
-		   checksum = compute_checksum();
-		 }
+      {
+	const detail::MessageTypeInfo& info ( detail::get_type_info(_U::Type) );
+	header.type = _U::Type;
+	MemoryEncodeBuffer eb ( _body.get_encoded_size() );
+	_body.encode(eb);
+	body.reset(Buffer::copy_new(eb.data, eb.length));
+	header.length = _body.get_encoded_size() + (info.has_checksum ? MESSAGE_CHECKSUM_SIZE : 0);
+	checksum = compute_checksum();
+      }
 
     Message&
     operator =(Message&& m);
@@ -138,24 +130,43 @@ namespace crisp
     uint32_t compute_checksum() const;
 
     inline bool checksum_ok() const {
-      if ( detail::get_type_info(type).has_checksum )
+      if ( detail::get_type_info(header.type).has_checksum )
 	return checksum == compute_checksum();
       else
 	return true;
     }
 
-    /** Number of bytes present at the start of all encoded Message objects. */
-    static const size_t HeaderSize;
+    /** Packed Message-header fields.  These are encased in their own structure
+	because g++ is super-picky and won't pack structs with non-POD elements
+	in them. */
+    struct __attribute__ (( packed ))
+    Header
+      {
+	uint16_t length;		/**< Number of bytes *after the header* in this message.  If
+					   applicable, this values _does_ include the length of the
+					   checksum field.
+					*/
+	MessageType type;		/**< Message type (a value of type MessageType) */
 
-    uint16_t length;		/**< Number of bytes *after the header* in this message.  If
-				   applicable, this values _does_ include the length of the
-				   checksum field.
-				*/
-    MessageType type;		/**< Message type (a value of type MessageType) */
 #if defined(MESSAGE_USE_SEQUENCE_ID) && MESSAGE_USE_SEQUENCE_ID
-    uint32_t sequence_id;	/**< Sequence number of this message.  */
+	uint32_t sequence_id;	/**< Sequence number of this message.  */
 #endif
 
+	/** Equality operator. */
+	bool
+	operator ==(const Header& h) const
+	{ return h.length == length && h.type == type
+#if defined(MESSAGE_USE_SEQUENCE_ID) && MESSAGE_USE_SEQUENCE_ID
+	    && h.sequence_id == sequence_id
+#endif
+	    ;
+	}
+
+      };
+
+
+    /** Header fields for this message. */
+    Header header;
     crisp::util::RefTraits<Buffer>::stored_ref body;
 
     uint32_t checksum;		/**< Stored checksum value.  The checksum is computed over the

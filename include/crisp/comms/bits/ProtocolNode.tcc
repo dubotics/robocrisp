@@ -170,7 +170,7 @@ namespace crisp
 
       m_receive_buffer.reset();
       m_receive_step = ReceiveStep::READ_HEADER;
-      m_receive.remaining_bytes = Message::HeaderSize;
+      m_receive.remaining_bytes = sizeof(Message::Header);
 
       m_receive.strand.post([&]{ receive_do(); });
     }
@@ -215,11 +215,11 @@ namespace crisp
 			   of the receive buffer into it so we can grab the `length` field without
 			   too much hassle.  */
 			Message m;
-			memcpy(&m, m_receive_buffer.data, Message::HeaderSize);
-			m_receive.remaining_bytes = m.length;
+			memcpy(&m.header, m_receive_buffer.data, sizeof(Message::Header));
+			m_receive.remaining_bytes = m.header.length;
 
 			/* const detail::MessageTypeInfo& info ( detail::get_type_info(m.type) );
-			 * fprintf(stderr, "[0x%0x] \033[1;32mReceived header:\033[0m length %u, type %s\n", THREAD_ID, m.length, info.name); */
+			 * fprintf(stderr, "[0x%0x] \033[1;32mReceived header:\033[0m length %u, type %s\n", THREAD_ID, m.header.length, info.name); */
 		      }
 		      m_receive_step = ReceiveStep::READ_TAIL_AND_ENQUEUE;
 		      break;
@@ -246,7 +246,7 @@ namespace crisp
 
 			    /* Set us up to read the next message header. */
 			    m_receive_step = ReceiveStep::READ_HEADER;
-			    m_receive.remaining_bytes = Message::HeaderSize;
+			    m_receive.remaining_bytes = sizeof(Message::Header);
 			  }
 			m_receive_buffer.reset();
 		      }
@@ -255,7 +255,7 @@ namespace crisp
 		    case ReceiveStep::RESYNC:
 		      fprintf(stderr, "[0x%0x] \033[1;32mSynchronized.\033[0m\n", THREAD_ID);
 		      m_receive_step = ReceiveStep::READ_HEADER;
-		      m_receive.remaining_bytes = Message::HeaderSize;
+		      m_receive.remaining_bytes = sizeof(Message::Header);
 		      m_receive_buffer.reset();
 		      break;
 		    }

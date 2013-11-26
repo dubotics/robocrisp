@@ -6,8 +6,10 @@
      *reinterpret_cast<unsigned int*>(&_id);				\
    }))
 
-#define TRACE()					\
-  fprintf(stderr, "[0x%0x] \033[96mTRACE: \033[0m \033[97m%s\033[0m (0x%p)\n", THREAD_ID, __PRETTY_FUNCTION__, this)
+/* #define TRACE()								\
+    fprintf(stderr, "[0x%0x] \033[96mTRACE: \033[0m \033[97m%s\033[0m (0x%p)\n", THREAD_ID, __PRETTY_FUNCTION__, this) */
+#define TRACE()
+
 
 #define MTI_FOR(n) MessageType::n, #n
 namespace crisp
@@ -40,65 +42,52 @@ namespace crisp
 
 
 
-    const size_t
-    Message::HeaderSize =
-      offsetof(Message, body);
-
     Message::Message()
-      : length ( 0 ),
-	type ( MessageType::HANDSHAKE ),
+      : header {
+            0,
+	    MessageType::HANDSHAKE
 #if defined(MESSAGE_USE_SEQUENCE_ID) && MESSAGE_USE_SEQUENCE_ID
-	sequence_id ( 0 ),
+	   , 0
 #endif
-	body ( nullptr )
+       },
+      body ( nullptr ),
+      checksum ( 0 )
     {
-      /* TRACE(); */
+      TRACE();
     }
 
     Message::Message(Message&& m)
-      : length ( m.length ),
-	type ( m.type ),
-#if defined(MESSAGE_USE_SEQUENCE_ID) && MESSAGE_USE_SEQUENCE_ID
-	sequence_id ( m.sequence_id ),
-#endif
-	body ( std::move(m.body) )
+      : header ( std::move(m.header) ),
+	body ( std::move(m.body) ),
+	checksum ( 0 )
     {
-      /* TRACE(); */
+      TRACE();
     }
 
     Message::Message(const Message& m)
-      : length ( m.length ),
-	type ( m.type ),
-#if defined(MESSAGE_USE_SEQUENCE_ID) && MESSAGE_USE_SEQUENCE_ID
-	sequence_id ( m.sequence_id ),
-#endif
-	body ( m.body )
+      : header ( m.header ),
+	body ( m.body ),
+	checksum ( m.checksum )
     {
-      /* TRACE(); */
+      TRACE();
     }
 
     Message::Message(MessageType _type)
-      : length ( 0 ),
-	type ( _type ),
-#if defined(MESSAGE_USE_SEQUENCE_ID) && MESSAGE_USE_SEQUENCE_ID
-	sequence_id ( ),
-#endif
-	body ( nullptr )
+      : header { 0, _type },
+        body ( nullptr ),
+        checksum ( 0 )
     {
-      /* TRACE(); */
-      length = get_encoded_size() - HeaderSize;
+      TRACE();
+      header.length = get_encoded_size() - sizeof(Header);
     }
 
     Message&
     Message::operator =(Message&& m)
     {
-      /* TRACE(); */
-      length = m.length;
-      type = m.type;
-#if defined(MESSAGE_USE_SEQUENCE_ID) && MESSAGE_USE_SEQUENCE_ID
-      sequence_id = m.sequence_id;
-#endif
-      body.reset(m.body.get());
+      TRACE();
+      header = std::move(m.header);
+      body = std::move(m.body);
+      checksum = std::move(m.checksum);
       return *this;
     }
 
@@ -106,13 +95,14 @@ namespace crisp
     size_t
     Message::get_encoded_size() const
     {
-      const detail::MessageTypeInfo& info ( detail::get_type_info(type) );
+      TRACE();
+      const detail::MessageTypeInfo& info ( detail::get_type_info(header.type) );
       if ( info.has_checksum )
 	assert(info.has_body);
       if ( info.has_body )
 	assert((body && ! info.body) || info.body);
 
-      return HeaderSize
+      return sizeof(Header)
 	+ ( info.has_body ? ( body ? body->length : strlen(info.body)) : 0 )
 	+ ( info.has_checksum ? MESSAGE_CHECKSUM_SIZE : 0 );
     }
@@ -122,13 +112,13 @@ namespace crisp
     {
       Message out;
 
-      db.read(&out, HeaderSize);
-      const detail::MessageTypeInfo& info ( detail::get_type_info(out.type) );
+      db.read(&out.header, sizeof(Header));
+      const detail::MessageTypeInfo& info ( detail::get_type_info(out.header.type) );
 
       if ( info.has_body )
 	{ if ( ! info.body )
-	    out.body.reset(Buffer::copy_new(db.data + db.offset, out.length - ( info.has_checksum ? MESSAGE_CHECKSUM_SIZE : 0 )));
-	  db.offset += out.length - (info.has_checksum ? MESSAGE_CHECKSUM_SIZE : 0);
+	    out.body.reset(Buffer::copy_new(db.data + db.offset, out.header.length - ( info.has_checksum ? MESSAGE_CHECKSUM_SIZE : 0 )));
+	  db.offset += out.header.length - (info.has_checksum ? MESSAGE_CHECKSUM_SIZE : 0);
 	}
 
       if ( info.has_checksum )
@@ -142,8 +132,8 @@ namespace crisp
     {
       size_t initial_offset ( buf.offset );
 
-      buf.write(this, HeaderSize);
-      const detail::MessageTypeInfo& info ( detail::get_type_info(type) );
+      buf.write(&header, sizeof(Header));
+      const detail::MessageTypeInfo& info ( detail::get_type_info(header.type) );
 
       if ( info.has_body )
 	{
@@ -172,8 +162,8 @@ namespace crisp
     EncodeResult
     Message::encode(StreamEncodeBuffer& buf) const
     {
-      buf.write(this, HeaderSize);
-      const detail::MessageTypeInfo& info ( detail::get_type_info(type) );
+      buf.write(&header, sizeof(Header));
+      const detail::MessageTypeInfo& info ( detail::get_type_info(header.type) );
       if ( info.has_checksum && ! checksum )
 	const_cast<uint32_t&>(checksum) = compute_checksum();
 
@@ -202,12 +192,12 @@ namespace crisp
       if ( info.has_body )
 	assert(info.body != nullptr);
 
-      m.length = (info.body ? strlen(info.body) : 0) + (info.has_checksum ? MESSAGE_CHECKSUM_SIZE : 0 );
-      m.type = _type;
-      buf.write(&m, HeaderSize);
+      m.header.length = (info.body ? strlen(info.body) : 0) + (info.has_checksum ? MESSAGE_CHECKSUM_SIZE : 0 );
+      m.header.type = _type;
+      buf.write(&m.header, sizeof(Header));
 
       if ( info.has_body )
-	buf.write(info.body, m.length - (info.has_checksum ? MESSAGE_CHECKSUM_SIZE : 0));
+	buf.write(info.body, m.header.length - (info.has_checksum ? MESSAGE_CHECKSUM_SIZE : 0));
 
       if ( info.has_checksum )
 	{
@@ -221,18 +211,18 @@ namespace crisp
     uint32_t
     Message::compute_checksum() const
     {
-      const detail::MessageTypeInfo& info ( detail::get_type_info(type) );
+      const detail::MessageTypeInfo& info ( detail::get_type_info(header.type) );
       if ( ! info.has_checksum )
 	return 0;
 
       /* Allocate memory for the buffers on the stack, since we don't need to pass it to any other
 	 functions.  */
-      size_t bufsize ( Message::HeaderSize + ( body ? body->length : 0 ) );
+      size_t bufsize ( sizeof(Header) + ( body ? body->length : 0 ) );
       char buf[bufsize];
 
-      memcpy(buf, this, HeaderSize);
+      memcpy(buf, this, sizeof(Header));
       if ( body )
-	memcpy(buf + HeaderSize, body->data, body->length);
+	memcpy(buf + sizeof(Header), body->data, body->length);
 
       return crisp::util::crc32(buf, bufsize);
     }
@@ -241,11 +231,11 @@ namespace crisp
     Message::operator ==(const Message& m) const
     {
       return
-	type == m.type &&
-	length == m.length &&
-#if defined(MESSAGE_USE_SEQUENCE_ID) && MESSAGE_USE_SEQUENCE_ID
-	sequence_id == m.sequence_id &&
-#endif
+	header == m.header &&
+	( body == m.body ||
+	  ( body && m.body &&
+	    body->length == m.body->length &&
+	    ! memcmp(body->data, m.body->data, body->length) ) ) &&
 	compute_checksum() == m.compute_checksum();
     }
 

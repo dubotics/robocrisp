@@ -91,7 +91,7 @@ namespace crisp
     void
     MessageDispatcher<_PortType>::dispatch(const Message& message, MessageDirection direction) throw ( std::runtime_error )
     {
-      switch ( message.type )
+      switch ( message.header.type )
 	{
 	case MessageType::HANDSHAKE:
 	  call_handler(*m_node, message, direction, handshake);
