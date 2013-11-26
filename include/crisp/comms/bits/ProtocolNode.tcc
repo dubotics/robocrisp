@@ -92,10 +92,10 @@ namespace crisp
 
       m_send_message = std::move(m);
 
-      m_send_buffer.prepare(m.get_encoded_size());
+      m_send_buffer.prepare(m_send_message.get_encoded_size());
       StreamEncodeBuffer buf { &m_send_buffer };
-      m.encode(buf);
-      m_send.remaining_bytes = m.get_encoded_size();
+      m_send_message.encode(buf);
+      m_send.remaining_bytes = m_send_message.get_encoded_size();
 
       /* const detail::MessageTypeInfo& info ( detail::get_type_info(m.type) );
        * fprintf(stderr, "[0x%0x] \033[1;33mSending message:\033[0m %s (%zu bytes)\n", THREAD_ID, info.name, m_send.remaining_bytes); */
