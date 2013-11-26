@@ -45,11 +45,11 @@ namespace crisp
     {
       BOOST_PARAMETER_NAME(minimum)
       BOOST_PARAMETER_NAME(maximum)
-	BOOST_PARAMETER_NAME(array)
-	BOOST_PARAMETER_NAME(array_size_width)
-	BOOST_PARAMETER_NAME(neutral)
-	BOOST_PARAMETER_NAME(width)
-	}
+      BOOST_PARAMETER_NAME(array)
+      BOOST_PARAMETER_NAME(array_size_width)
+      BOOST_PARAMETER_NAME(neutral)
+      BOOST_PARAMETER_NAME(width)
+    }
 
 #ifdef SWIG
     template < typename _ValueType, typename _Enable = _ValueType >
@@ -142,7 +142,7 @@ namespace crisp
 				   (width,(uint8_t))
 				   (array_size_width,(uint8_t))))
 
-	using BaseType::operator DataDeclarationBase<>;
+      using BaseType::operator DataDeclarationBase<>;
     };
 #endif
   }
