@@ -424,7 +424,11 @@ namespace crisp
       DataDeclarationBase(_ArgumentPack&& args);
 
     template < typename _ArgumentPack >
-    DataDeclarationBase<_ArgumentPack, typename std::enable_if<!std::is_base_of<Type,_ArgumentPack>::value>::type>
+#ifdef __clang__
+      DataDeclarationBase<_ArgumentPack, typename std::enable_if<!std::is_base_of<Type,_ArgumentPack>::value>::type>
+#else
+      DataDeclarationBase
+#endif
       (_ArgumentPack&& args)
       : width ( args[keywords::_width | sizeof(_ValueType)] ),
         is_array ( args[keywords::_array | false] ),
@@ -543,7 +547,11 @@ namespace crisp
     template < typename _ArgumentPack, typename _Enable >
       DataDeclarationBase(_ArgumentPack&& args);
     template < typename _ArgumentPack >
+#ifdef __clang__
     DataDeclarationBase<_ArgumentPack, typename std::enable_if<!std::is_base_of<Type,_ArgumentPack>::value>::type>
+#else
+    DataDeclarationBase
+#endif
       (_ArgumentPack&& args)
       : width ( args[keywords::_width | sizeof(_ValueType)] ),
         is_array ( args[keywords::_array | false] ),

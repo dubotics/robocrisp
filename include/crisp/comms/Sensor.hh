@@ -72,7 +72,7 @@ namespace crisp
 
       inline size_t
 	get_name_length() const
-      { return name ? p_abs(name_length) : 0; }
+      { return name ? crisp::util::p_abs(name_length) : 0; }
 
       SENSOR_COMMON_FUNCS()
 	NAMED_TYPED_COMMON_FUNC_INLINES()
@@ -141,7 +141,8 @@ namespace crisp
         type ( _type ),
         reporting_mode ( _mode ),
         data_type ( _data_type ),
-        name ( _name )
+        name ( _name ),
+	owns_name ( false )
 	{}
 
 
@@ -159,6 +160,8 @@ namespace crisp
       DataType data_type;
 
       const char* name;		/**< Name string, or NULL if `name_length` is zero. */
+      bool owns_name;		/**< Dummy variable to satisfy functions in
+				   NAMED_TYPED_COMMON_FUNC_INLINES() -- always false! */
     };
 
   }

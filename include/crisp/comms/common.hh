@@ -45,7 +45,7 @@
   name : base					\
   { __VA_ARGS__ }
 #else
-#  define ENUM_CLASS(name,base,...) enum class __attribute__(( packed )) name : base { __VA_ARGS__ }
+#  define ENUM_CLASS(name,base,...) enum class name : base { __VA_ARGS__ }
 #endif
 
 namespace crisp

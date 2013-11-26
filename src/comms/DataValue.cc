@@ -65,7 +65,9 @@ namespace crisp
     DataValue<>::operator =(DataValue<>&& dv)
     {
       data_type = std::move(dv.data_type);
-      value = std::move(dv.value);
+      if ( value && owns_value )
+	delete[] value;
+      value = dv.value;
       owns_value = dv.owns_value;
       dv.owns_value = false;
       return *this;

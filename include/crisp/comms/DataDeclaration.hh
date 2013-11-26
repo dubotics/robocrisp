@@ -133,7 +133,7 @@ namespace crisp
       using BaseType::has_minimum_value;
       using BaseType::has_maximum_value;
 
-      BOOST_PARAMETER_CONSTRUCTOR(DataDeclaration<_ValueType>, (BaseType), ::crisp::comms::keywords::tag,
+      BOOST_PARAMETER_CONSTRUCTOR(DataDeclaration, (BaseType), ::crisp::comms::keywords::tag,
 				  (optional
 				   (neutral,(ValueType))
 				   (minimum,(ValueType))

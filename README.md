@@ -14,11 +14,6 @@ _without_ access to the onboard code.
 
 [And really?  Go ahead and make up your own backronym.  We won't mind.]
 
-**NOTE:** RoboCRISP makes heavy use of features from the 2011 C++ language standard, and a
-recent compiler *is* required.  GCC version 4.8 seems to choke on certain code in unexpected
-ways, so **the authors recommend installing Clang 3.3 or later.** (With any luck, this
-requirement will be relaxed as the offending code is corrected.)
-
 ## Features/Disfeatures
 
 RoboCRISP provides

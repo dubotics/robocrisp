@@ -34,8 +34,8 @@ namespace crisp
   bool operator ==(const ModuleInput& o) const				\
   {									\
     return input_id == o.input_id && /* mode == o.mode && */		\
-      crisp::util::p_abs(name_length) == crisp::util::p_abs(o.name_length) && data_type == o.data_type && \
-      (name_length == 0 || ! memcmp(name, o.name, crisp::util::p_abs(name_length))); \
+      get_name_length() == o.get_name_length() && data_type == o.data_type && \
+      (get_name_length() == 0 || ! memcmp(name, o.name, get_name_length())); \
   }
 
 
@@ -141,7 +141,8 @@ namespace crisp
       ModuleInput(const char* _name, DataType _data_type/* , ModuleInputMode _mode = ModuleInputMode::ABSOLUTE */)
       : /* mode ( _mode ), */
         data_type ( _data_type ),
-        name ( _name )
+      name ( _name ),
+      owns_name ( false )
     {}
 
     inline size_t
@@ -166,6 +167,8 @@ namespace crisp
     DataDeclaration<_T> data_type; /**< Kind of data this input takes. */
 
     const char* name;
+    bool owns_name;		/**< Dummy variable to satisfy functions in
+				   NAMED_TYPED_COMMON_FUNC_DECLS() -- always false! */
   };
 #endif
   }

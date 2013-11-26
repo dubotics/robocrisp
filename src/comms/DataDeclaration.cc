@@ -75,12 +75,12 @@ namespace crisp
     {
       switch ( type )
 	{
-	case DataType::UNDEFINED: return "UNDEFINED";
+	case static_cast<int>(DataType::UNDEFINED): return "UNDEFINED";
 	  /* C99 defines a boolean type, but it's got a funny name. */
-	case DataType::BOOLEAN: return lang == TargetLanguage::C ? "_Bool" : "bool";
-	case DataType::INTEGER: return integer_type_name(width);
-	case DataType::FLOAT:   return float_type_name(width);
-	case DataType::STRING:  return "char*";
+	case static_cast<int>(DataType::BOOLEAN): return lang == TargetLanguage::C ? "_Bool" : "bool";
+	case static_cast<int>(DataType::INTEGER): return integer_type_name(width);
+	case static_cast<int>(DataType::FLOAT):   return float_type_name(width);
+	case static_cast<int>(DataType::STRING):  return "char*";
 	}
 
       return NULL;

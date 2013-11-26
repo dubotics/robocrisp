@@ -25,9 +25,12 @@
   inline EncodeResult							\
   encode(MemoryEncodeBuffer& buf) const					\
   {									\
-    typename std::conditional<std::is_same<decltype(*this), TranscodeAsType>::value, \
-			      const decltype(*this)&&, const TranscodeAsType&&>::type \
-      generic ( std::move(*this) );					\
+    /* Here be dragons! */						\
+    using Type =							\
+      typename std::remove_reference<typename std::remove_const<decltype(*this)>::type>::type; \
+    typename std::conditional<std::is_same<Type, TranscodeAsType>::value, \
+			      const Type, const TranscodeAsType>::type& \
+      generic ( *this );						\
 									\
     if ( buf.length - buf.offset < get_encoded_size() )			\
       return EncodeResult::INSUFFICIENT_SPACE;				\
@@ -102,9 +105,12 @@
   EncodeResult								\
   _class::encode(MemoryEncodeBuffer& buf) const				\
   {									\
-    typename std::conditional<std::is_same<decltype(*this), TranscodeAsType>::value, \
-			      const decltype(*this)&&, const TranscodeAsType&&>::type \
-      generic ( std::move(*this) );					\
+    /* Here be dragons! */						\
+    using Type =							\
+      typename std::remove_reference<typename std::remove_const<decltype(*this)>::type>::type; \
+    typename std::conditional<std::is_same<Type, TranscodeAsType>::value, \
+			      const Type, const TranscodeAsType>::type& \
+      generic ( *this );						\
 									\
     if ( buf.length - buf.offset < get_encoded_size() )			\
       return EncodeResult::INSUFFICIENT_SPACE;				\
