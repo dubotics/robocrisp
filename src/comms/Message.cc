@@ -18,14 +18,14 @@ namespace crisp
     {
       static const MessageTypeInfo
       message_type_info[] =
-	{ { MTI_FOR(HANDSHAKE),		true, false,		FlowDirection::ANY,	  nullptr },
-	  { MTI_FOR(HANDSHAKE_RESPONSE),	true, false,		FlowDirection::ANY,	  nullptr },
-	  { MTI_FOR(SYNC), 		true, false, 		FlowDirection::ANY, 	  "SYNC" },
-	  { MTI_FOR(ERROR), 		true, true, 		FlowDirection::ANY, 	  nullptr },
-	  { MTI_FOR(CONFIGURATION_QUERY), false, false,		FlowDirection::TO_SLAVE,  "QUERY-CONFIGURATION" },
-	  { MTI_FOR(CONFIGURATION_RESPONSE), true, true,		FlowDirection::TO_MASTER, nullptr },
-	  { MTI_FOR(SENSOR_DATA), 	true, true, 	       	FlowDirection::TO_MASTER, nullptr },
-	  { MTI_FOR(MODULE_CONTROL), 	true, true,	       	FlowDirection::TO_SLAVE,   nullptr } };
+	{ { MTI_FOR(HANDSHAKE),			true, false,	FlowDirection::ANY,	  nullptr },
+	  { MTI_FOR(HANDSHAKE_RESPONSE),	true, false,	FlowDirection::ANY,	  nullptr },
+	  { MTI_FOR(SYNC), 			true, false, 	FlowDirection::ANY, 	  "SYNC" },
+	  { MTI_FOR(ERROR), 			true, true, 	FlowDirection::ANY, 	  nullptr },
+	  { MTI_FOR(CONFIGURATION_QUERY), 	false, false,	FlowDirection::TO_SLAVE,  "QUERY-CONFIGURATION" },
+	  { MTI_FOR(CONFIGURATION_RESPONSE), 	true, true,	FlowDirection::TO_MASTER, nullptr },
+	  { MTI_FOR(SENSOR_DATA), 		true, true, 	FlowDirection::TO_MASTER, nullptr },
+	  { MTI_FOR(MODULE_CONTROL), 		true, true,	FlowDirection::TO_SLAVE,  nullptr } };
   
       static_assert(sizeof(message_type_info) / sizeof(MessageTypeInfo) == MESSAGE_TYPE_COUNT, "`message_type_info` array needs update!");
 

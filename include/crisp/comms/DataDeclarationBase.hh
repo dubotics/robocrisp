@@ -14,7 +14,7 @@
 #define DATA_DECLARATION_BASE_COMMON_FUNCS()				\
   EncodeResult								\
   encode(EncodeBuffer& buf) const					\
-  { return crisp::comms::detail::DataDeclarationBase::encode(*this, buf); }	\
+  { return crisp::comms::detail::DataDeclarationBase::encode(*this, buf); } \
 									\
   DecodeResult								\
   decode(DecodeBuffer& buf)						\

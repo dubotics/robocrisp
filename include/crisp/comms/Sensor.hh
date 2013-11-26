@@ -59,7 +59,7 @@ namespace crisp
       return ga.id == gb.id && ga.type == gb.type && ga.reporting_mode == gb.reporting_mode && \
 	p_abs(ga.name_length) == p_abs(gb.name_length) && ga.data_type == gb.data_type && \
 	(ga.name_length == 0 || ! memcmp(ga.name, gb.name, p_abs(ga.name_length))); \
-  }
+    }
 
     /** Generic Sensor implementation, as stored in Configuration instances and sent over radio link. */
     template < typename _T >
