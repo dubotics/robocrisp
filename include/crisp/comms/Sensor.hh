@@ -49,11 +49,11 @@ namespace crisp
       assert(this != nullptr && &o != nullptr);				\
 									\
       typedef typename std::conditional<std::is_same<Sensor<_T>, TranscodeAsType>::value, \
-					const Sensor<_T>&&, TranscodeAsType>::type \
+					const Sensor<_T>&, TranscodeAsType>::type \
       common_type;							\
 									\
-      common_type ga (std::move(*this) );				\
-      common_type gb ( std::move(o) );					\
+      common_type ga ( *this );                                         \
+      common_type gb ( o );                                             \
 									\
       using crisp::util::p_abs;						\
       return ga.id == gb.id && ga.type == gb.type && ga.reporting_mode == gb.reporting_mode && \
