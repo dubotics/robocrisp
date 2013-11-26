@@ -10,12 +10,12 @@ set(CMAKE_CXX_COMPILER "clang++" CACHE INTERNAL "")
 
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_LIBS OFF)
-find_package(Boost 1.48.0 REQUIRED COMPONENTS
+find_package(Boost 1.54.0 REQUIRED COMPONENTS
   system
   )
 
 if(NOT Boost_FOUND)
-  message(FATAL_ERROR "The Boost libraries were not found.  Please install Boost v1.48.0 or later.")
+  message(FATAL_ERROR "The Boost libraries were not found.  Please install Boost v1.54 or later.")
 endif(NOT Boost_FOUND)
 
 include_directories(${Boost_INCLUDE_DIRS})
