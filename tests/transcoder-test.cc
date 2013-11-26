@@ -141,11 +141,11 @@ test_message_encode(const _T& x, _Args&&... args)
 
   const char* demangled_names[] { demangle(typeid(_T).name()), demangle(typeid(typename _T::TranscodeAsType).name()) };
 
-  MemoryEncodeBuffer eb ( x.get_encoded_size() + Message::HeaderSize + MESSAGE_CHECKSUM_SIZE );
+  MemoryEncodeBuffer eb ( x.get_encoded_size() + sizeof(Message::Header) + MESSAGE_CHECKSUM_SIZE );
   Message m(x);
-  assert(m.type == _T::Type);
+  assert(m.header.type == _T::Type);
 
-  const detail::MessageTypeInfo& type_info ( detail::get_type_info(m.type) );
+  const detail::MessageTypeInfo& type_info ( detail::get_type_info(m.header.type) );
 
   m.encode(eb);
   fprintf(stderr, "%s\n  encoded message: ", __PRETTY_FUNCTION__);
