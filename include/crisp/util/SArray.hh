@@ -28,7 +28,8 @@ namespace crisp
      * @tparam _Tp Element type.
      */
     template < typename _Tp >
-    struct SArray
+    struct  __attribute__ (( packed ))
+    SArray
     {
       typedef _Tp ValueType;
 

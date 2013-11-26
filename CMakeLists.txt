@@ -36,6 +36,11 @@ if(CMAKE_CXX_COMPILER STREQUAL "clang++")
 
     "-fno-spell-checking"
     )
+else(CMAKE_CXX_COMPILER STREQUAL "clang++")
+  # Assuming g++.
+  add_definitions(
+    "-Wno-packed-bitfield-compat"
+    )
 endif(CMAKE_CXX_COMPILER STREQUAL "clang++")
 
 include_directories("${RoboCRISP_SOURCE_DIR}/include")

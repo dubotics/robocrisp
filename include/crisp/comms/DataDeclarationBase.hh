@@ -203,7 +203,7 @@ namespace crisp
   struct DataDeclarationBase
 #else
   template < typename _ValueType >
-  struct __attribute__ (( packed ))
+  struct __attribute__ (( packed, align(1) ))
   DataDeclarationBase<_ValueType, typename std::enable_if<std::is_void<_ValueType>::value, _ValueType>::type>
 #endif
   {
