@@ -1,4 +1,5 @@
 #include <crisp/input/Axis.hh>
+#include <cmath>
 
 namespace crisp
 {
