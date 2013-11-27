@@ -2,12 +2,41 @@
 #define crisp_util_PeriodicScheduler_hh 1
 
 #include <chrono>
+#include <set>
+#include <unordered_map>
 #include <boost/asio/steady_timer.hpp>
+#include <crisp/util/PeriodicAction.hh>
+#include <crisp/util/PeriodicScheduleSlot.hh>
+
+
+/* Need to define std::hash<std::chrono::microseconds> for PeriodicScheduler,
+   which uses a map keyed on std::chrono::microseconds. I'd expect the standard
+   library to implement this, but it apparently doesn't. */
+namespace std {
+  template <> struct hash<typename crisp::util::PeriodicScheduleSlot::Duration> {
+    inline constexpr size_t operator()(const typename crisp::util::PeriodicScheduleSlot::Duration& d) const noexcept
+    { return d.count(); }
+  };
+}
 
 namespace crisp
 {
   namespace util
   {
+    namespace literals
+    {
+      /** User-defined literal for conversion from rate to interval.  Note that
+       *  this is semantically *wrong* because we're returning the reciprocal of
+       *  the constant...
+       *
+       *
+       */
+      inline constexpr PeriodicScheduleSlot::Duration
+      operator "" _Hz(unsigned long long int n) {
+        return PeriodicScheduleSlot::Duration(1000000000 / n);
+      }
+    }
+
     /** Runs user-defined functions at user-defined regular intervals.
      * PeriodicScheduler manages scheduled actions in a threaded fashion, such
      * that a function's execution time does not affect the scheduler's timing.
@@ -15,73 +44,9 @@ namespace crisp
     class PeriodicScheduler
     {
     public:
-      /** A scheduled action.  `Action` is used to manage a scheduled action by
-	  rescheduling, cancelling, or temporarily disabling it.  */
-      struct Action
-      {
-	/** Function type for user callbacks.
-	 *
-	 * @param action The Action object associated with the callback.
-	 */
-	typedef std::function<void(Action& action)> Function;
-	
-	Slot* slot;		/**< Pointer to the scheduler slot used by the action. */
-	Function function;	/**< User-defined function to be called by the
-				   slot. */
-
-
-	/** Reschedule the action by changing the slot used.  */
-	void reschedule(std::chrono::interval interval);
-
-
-	/** Temporarily remove the action from its associated slot, preventing
-	    it from running. */
-	void pause();
-
-	/** Unpause an action previously paused with `pause`. */
-	void unpause();
-
-	/** Cancel the action, removing it from its slot. */
-	void cancel();
-      };
-
-
-      /** A regularly-occurring-signal producer.  A slot sets up a timer, and
-       * when that timer expires launches a thread to invoke all actions
-       * assigned to it; the timer is then reset and the process starts again.
-       *
-       * `Slot` manages its assigned actions through member functions `push` and
-       * `delete`.  If a previously-non-empty slot becomes empty at any time, it
-       * will cancel its timer and reset it only when it becomes non-empty
-       * again.
-       */
-      struct Slot
-      {
-	/** Timer type used. */
-	typedef boost::asio::steady_timer Timer;
-
-	/** The slot's timer. */
-	Timer timer;
-
-	/** Interval at which the slot's handler runs. */
-	std::chrono::duration interval;
-
-	/** Actions assigned to this slot. */
-	std::set<Action> actions;
-
-	/** Constructor.
-	 *
-	 * @param scheduler Scheduler object that created this slot.
-	 *
-	 * @param _interval Interval at which the slot should activate.
-	 */
-	Slot(PeriodicScheduler& scheduler, std::chrono::duration _interval);
-
-	/** Callback used to handle timer events.  */
-	void
-	timer_expiry_handler(const boost::system::error_code& ec);
-      };
-
+      typedef PeriodicScheduleSlot Slot;
+      typedef PeriodicAction Action;
+      typedef typename Slot::Duration Duration;
 
       /** Construct a PeriodicScheduler that uses the given `io_service`.
        *
@@ -102,7 +67,7 @@ namespace crisp
        *     function call.
        */
       Action&
-      schedule(Action::Function function, std::chrono::duration interval);
+      schedule(Duration interval, Action::Function function);
 
 
       /** Reschedule a previously-created Action by moving it into a slot that
@@ -113,7 +78,7 @@ namespace crisp
        * @param interval New interval at which the action should be invoked.
        */
       void
-      reschedule(Action& action, std::chrono::duration interval);
+      reschedule(Duration interval, Action& action);
 
 
       /** Fetch a reference to the Boost.Asio `io_service` object used by this
@@ -125,13 +90,9 @@ namespace crisp
       get_io_service();
 
 
-      /** Cancel an entire slot. */
-      void
-      cancel_slot(Slot& slot);
-
     protected:
       /** A mapping from slot-interval to slot.  */
-      typedef std::map<std::chrono::duration,Slot> SlotMap;
+      typedef std::unordered_map<Duration,Slot> SlotMap;
 
       /** Reference to the io_service used by this scheduler. */
       boost::asio::io_service& m_io_service;

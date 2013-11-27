@@ -1,6 +1,9 @@
 add_library(crisp-util STATIC
   util/checksum.cc
   util/RefCountedObject.cc
+  util/PeriodicAction.cc
+  util/PeriodicScheduler.cc
+  util/PeriodicScheduleSlot.cc
   )
 
 add_library(crisp-comms STATIC

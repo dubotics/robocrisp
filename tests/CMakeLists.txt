@@ -9,3 +9,8 @@ target_link_libraries(transcoder-test crisp-comms crisp-util)
 # Basic controller test.
 add_executable(controller-test controller-test.cc)
 target_link_libraries(controller-test crisp-input pthread)
+
+
+# PeriodicScheduler test
+add_executable(periodic-test periodic-test.cc)
+target_link_libraries(periodic-test crisp-util pthread boost_system)
