@@ -29,6 +29,8 @@
  *   - _U::iterator end() const
  *
  *   - _U::size_type size() const
+ *
+ *   - bool empty() const
  */
 template < typename _T, typename _U = std::vector<_T> >
 class ArrayAccessor
@@ -60,6 +62,9 @@ public:
 
   size_type
   size() const { return m_ary.size(); }
+
+  bool
+  empty() const { return m_ary.empty(); }
 
   inline value_type&
   operator[](size_t idx)
