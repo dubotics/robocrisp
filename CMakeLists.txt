@@ -27,7 +27,7 @@ add_definitions(
   "-Wno-attributes"
   )
 
-if(CMAKE_CXX_COMPILER STREQUAL "clang++")
+if("${CMAKE_CXX_COMPILER}" MATCHES "clang\\+\\+")
   add_definitions(
     "-Wno-c++98-compat"
     "-Wno-c++98-compat-pedantic"
@@ -36,12 +36,12 @@ if(CMAKE_CXX_COMPILER STREQUAL "clang++")
 
     "-fno-spell-checking"
     )
-else(CMAKE_CXX_COMPILER STREQUAL "clang++")
+else("${CMAKE_CXX_COMPILER}" MATCHES "clang\\+\\+")
   # Assuming g++.
   add_definitions(
     "-Wno-packed-bitfield-compat"
     )
-endif(CMAKE_CXX_COMPILER STREQUAL "clang++")
+endif("${CMAKE_CXX_COMPILER}" MATCHES "clang\\+\\+")
 
 include_directories("${RoboCRISP_SOURCE_DIR}/include")
 add_subdirectory(src)
