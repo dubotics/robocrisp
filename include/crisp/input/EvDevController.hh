@@ -16,7 +16,6 @@ namespace crisp
     {
     private:
       int m_fd;
-      std::vector<Axis> m_axes;
       std::unordered_map<uint16_t,size_t> m_axis_map; /**< Mapping from axis code to index. */
       /* std::vector<Button> m_buttons; */
       char

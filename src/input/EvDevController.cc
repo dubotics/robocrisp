@@ -42,7 +42,7 @@ namespace crisp
 	  /* Determine the available axes. */
 	  size_t num_axes = 0;
 	  struct {
-	    size_t index;
+	    size_t code;	/**< event code (Linux axis number) */
 	    struct input_absinfo info;
 	  } _axes[ABS_CNT];
 	  memset(_axes, 0, sizeof(_axes));
@@ -52,7 +52,7 @@ namespace crisp
 	      if ( ioctl(m_fd, EVIOCGABS(i), &(_axes[num_axes].info)) >= 0 )
 		{
 		  if ( _axes[num_axes].info.minimum != _axes[num_axes].info.maximum )
-		    _axes[num_axes++].index = i;
+		    _axes[num_axes++].code = i;
 		}
 	      else
 		break;
@@ -64,9 +64,9 @@ namespace crisp
 	  for ( size_t i = 0; i < num_axes; ++i )
 	    {
 	      struct input_absinfo& info ( _axes[i].info );
-	      Axis::RawConfig raw { info.value, info.minimum, info.maximum,  info.fuzz, info.flat };
+	      Axis::RawConfig raw { info.value, info.minimum, info.maximum,  info.flat, info.flat };
 	      m_axes.emplace_back(i, raw);
-	      m_axis_map.insert(std::make_pair(_axes[i].index, i));
+	      m_axis_map.emplace(_axes[i].code, i);
 	    }
 	}
 
