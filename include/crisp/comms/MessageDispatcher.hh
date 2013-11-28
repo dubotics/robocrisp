@@ -39,12 +39,12 @@ namespace crisp
        */
       void dispatch(const Message& message, MessageDirection direction) throw ( std::runtime_error );
 
-      MessageHandler<Handshake, _SocketType> handshake;
-      MessageHandler<HandshakeResponse, _SocketType> handshake_response;
-      MessageHandler<void, _SocketType> sync;
-      MessageHandler<void, _SocketType> configuration_query;
-      MessageHandler<Configuration, _SocketType> configuration_response;
-      MessageHandler<Message, _SocketType> module_control;
+      MessageHandler<_SocketType,Handshake> handshake;
+      MessageHandler<_SocketType,HandshakeResponse> handshake_response;
+      MessageHandler<_SocketType,void> sync;
+      MessageHandler<_SocketType,void> configuration_query;
+      MessageHandler<_SocketType,Configuration> configuration_response;
+      MessageHandler<_SocketType,ModuleControl> module_control;
 
     };
   }

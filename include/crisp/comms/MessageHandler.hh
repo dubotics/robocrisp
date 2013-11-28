@@ -9,46 +9,46 @@ namespace crisp
 {
   namespace comms
   {
-  template < typename _SocketType > class ProtocolNode;
-  struct Message;
+    template < typename _SocketType > class ProtocolNode;
+    struct Message;
 
-  /** Interface template for message handlers. */
-  template < typename _BodyType = void, typename _SocketType = PROTOCOL_NODE_DEFAULT_SOCKET_TYPE, typename _Enable = _BodyType>
-  struct MessageHandler;
+    /** Interface template for message handlers. */
+    template < typename _SocketType = PROTOCOL_NODE_DEFAULT_SOCKET_TYPE, typename _BodyType = void , typename _Enable = _BodyType>
+    struct MessageHandler;
 
-  template < typename _BodyType, typename _SocketType >
-  struct
-  MessageHandler<_BodyType, _SocketType, typename std::enable_if<std::is_void<_BodyType>::value, void>::type>
-  {
-    typedef std::function<void(ProtocolNode<_SocketType>&)> HandlerFunction;
+    template < typename _SocketType, typename _BodyType >
+    struct
+    MessageHandler< _SocketType, _BodyType, typename std::enable_if<std::is_void<_BodyType>::value, void>::type>
+    {
+      typedef std::function<void(ProtocolNode<_SocketType>&)> HandlerFunction;
 
 
-    HandlerFunction
+      HandlerFunction
       sent,
-      received;
-  };
+        received;
+    };
 
 
-  template < typename _BodyType, typename _SocketType >
-  struct
-  MessageHandler<_BodyType, _SocketType, typename std::enable_if<std::is_same<_BodyType, crisp::comms::Message>::value, _BodyType>::type>
-  {
-    typedef std::function<void(ProtocolNode<_SocketType>&,const Message&)> HandlerFunction;
-    HandlerFunction
+    template < typename _SocketType, typename _BodyType>
+    struct
+    MessageHandler< _SocketType, _BodyType, typename std::enable_if<std::is_same<_BodyType, crisp::comms::Message>::value, _BodyType>::type>
+    {
+      typedef std::function<void(ProtocolNode<_SocketType>&,const Message&)> HandlerFunction;
+      HandlerFunction
       sent,
-      received;
-  };
+        received;
+    };
 
 
-  template < typename _BodyType, typename _SocketType >
-  struct
-  MessageHandler<_BodyType, _SocketType, typename std::enable_if<!(std::is_void<_BodyType>::value||std::is_same<_BodyType, Message>::value), _BodyType>::type>
-  {
-    typedef std::function<void(ProtocolNode<_SocketType>&,const _BodyType&)> HandlerFunction;
-    HandlerFunction
+    template < typename _SocketType, typename _BodyType >
+    struct
+    MessageHandler<  _SocketType, _BodyType, typename std::enable_if<!(std::is_void<_BodyType>::value||std::is_same<_BodyType, Message>::value), _BodyType>::type>
+    {
+      typedef std::function<void(ProtocolNode<_SocketType>&,const _BodyType&)> HandlerFunction;
+      HandlerFunction
       sent,
-      received;
-  };
+        received;
+    };
 
   }
 }
