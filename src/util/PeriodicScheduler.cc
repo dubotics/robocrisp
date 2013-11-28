@@ -38,6 +38,8 @@ namespace crisp
       /* Add the action to the slot. */
       Action& out ( slot->emplace(function) );
       assert(! slot->empty() );
+
+      return out;
     }
 
 
