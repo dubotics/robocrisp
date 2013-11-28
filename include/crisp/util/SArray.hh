@@ -154,21 +154,39 @@ namespace crisp
 	  push(const_cast<ValueType&&>(std::move(f)));
       }
 
-      /*SArray(const SArray& s)
-	: data ( s.data ),
-	size ( s.size ),
-	capacity ( s.capacity ),
-	owns_data ( false )
-	{}
+      /** Copy constructor.  Copies from the the values in the provided SArray.
+       *
+       * Use of this method requires that the enclosed type provides a copy
+       * constructor itself.
+       *
+       * @param s The array to copy from.
+       */
+      SArray(const SArray& s)
+	: SArray( s.size )
+      {
+        for ( size_t i ( 0 ); i < size; ++i )
+          emplace(s[i]);
+      }
 
-	SArray& operator=(const SArray& s)
-	{
-	data = s.data;
-	size = s.size;
-	capacity = s.capacity;
-	owns_data = false;
-	return *this;
-	}*/
+      /** Copy-assignment operator.  Copies from the the values in the provided
+       * SArray.
+       *
+       * Use of this method requires that the enclosed type provides a copy
+       * constructor itself.
+       *
+       * @param s The array to copy from.
+       *
+       * @return `*this`
+       */
+      SArray&
+      operator=(const SArray& s)
+      {
+        clear();
+        ensure_capacity(s.capacity);
+
+        for ( size_t i ( 0 ); i < size; ++i )
+          emplace(s[i]);
+      }
 
 
       /** Rvalue assignment operator. */
