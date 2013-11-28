@@ -37,18 +37,24 @@ namespace crisp
 	owns_name ( false )
     {}
 
-    /* Module::Module(const Module& m)
-     *   : id ( m.id ),
-     *     num_inputs ( m.num_inputs ),
-     *     num_sensors ( m.num_sensors ),
-     *     name_length ( m.name_length ),
-     *     name ( m.name ),
-     *     inputs ( m.inputs ),
-     *     sensors ( m.sensors ),
-     *     next_input_id ( m.next_input_id ),
-     *     next_sensor_id ( m.next_sensor_id ),
-     *     owns_name ( false )
-     * {} */
+    Module::Module(const Module& m)
+      : id ( m.id ),
+        num_inputs ( m.num_inputs ),
+        num_sensors ( m.num_sensors ),
+        name_length ( m.name_length ),
+        name ( m.owns_name ? nullptr : m.name ),
+        inputs ( m.inputs ),
+        sensors ( m.sensors ),
+        next_input_id ( m.next_input_id ),
+        next_sensor_id ( m.next_sensor_id ),
+        owns_name ( m.owns_name )
+    {
+      if ( owns_name && ! name )
+        {
+          name = new char[name_length];
+          strncpy(const_cast<char*>(name), m.name, name_length);
+        }
+    }
 
 
     Module::Module(Module&& m)
@@ -96,6 +102,58 @@ namespace crisp
     Module::~Module()
     {
       reset();
+    }
+
+
+    Module&
+    Module::operator =(Module&& module)
+    {
+      id = module.id;
+
+      num_inputs = module.num_inputs;
+      num_sensors = module.num_sensors;
+
+      inputs = std::move(module.inputs);
+      sensors = std::move(module.sensors);
+
+      next_input_id = module.next_input_id;
+      next_sensor_id = module.next_sensor_id;
+
+      name = module.name;
+      name_length = module.name_length;
+      owns_name = module.owns_name;
+      module.name = nullptr;
+
+      return *this;
+    }
+
+    Module&
+    Module::operator =(const Module& module)
+    {
+      reset();
+
+      id = module.id;
+
+      num_inputs = module.num_inputs;
+      num_sensors = module.num_sensors;
+
+      inputs = module.inputs;
+      sensors = module.sensors;
+
+      next_input_id = module.next_input_id;
+      next_sensor_id = module.next_sensor_id;
+
+      name_length = module.name_length;
+      owns_name = module.owns_name;
+      if ( owns_name )
+        {
+          name = new char[name_length];
+          strncpy(const_cast<char*>(name), module.name, name_length);
+        }
+      else
+        name = module.name;
+
+      return *this;
     }
 
     void

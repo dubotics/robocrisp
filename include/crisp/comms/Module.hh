@@ -40,9 +40,20 @@ namespace crisp
 
       /** Move constructor. */
       Module(Module&& m);
-      /* Module(const Module& m); */
 
+      /** Copy constructor. */
+      Module(const Module& m);
+
+      /** Destructor. */
       ~Module();
+
+
+      Module&
+      operator =(const Module& module);
+
+      Module&
+      operator =(Module&& module);
+
 
       /** Equality comparison operator. */
       bool
