@@ -218,10 +218,21 @@ namespace crisp
 			memcpy(&m.header, m_receive_buffer.data, sizeof(Message::Header));
 			m_receive.remaining_bytes = m.header.length;
 
-			/* const detail::MessageTypeInfo& info ( detail::get_type_info(m.type) );
-			 * fprintf(stderr, "[0x%0x] \033[1;32mReceived header:\033[0m length %u, type %s\n", THREAD_ID, m.header.length, info.name); */
+			const detail::MessageTypeInfo& info ( detail::get_type_info(m.header.type) );
+
+                        if ( info.has_body )
+                          {
+                            m_receive_step = ReceiveStep::READ_TAIL_AND_ENQUEUE;
+                            assert(m.header.length > 0);
+                          }
+                        else
+                          {
+                            m_receive.queue.emplace(std::move(m));
+
+                            m_receive_step = ReceiveStep::READ_HEADER;
+			    m_receive.remaining_bytes = sizeof(Message::Header);
+                          }
 		      }
-		      m_receive_step = ReceiveStep::READ_TAIL_AND_ENQUEUE;
 		      break;
 
 		    case ReceiveStep::READ_TAIL_AND_ENQUEUE:
