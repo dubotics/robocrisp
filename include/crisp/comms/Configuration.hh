@@ -30,12 +30,19 @@ namespace crisp
 
 
       Configuration(uint8_t modules_alloc = 0);
-      Configuration(Configuration&& config);
-      ~Configuration();
+      Configuration(const Configuration& config); /**< Copy constructor. */
+      Configuration(Configuration&& config);      /**< Move constructor. */
+      ~Configuration();                           /**< Destructor. */
       void reset();
 
+      Configuration&
+      operator =(Configuration&& c);
+
+      Configuration&
+      operator =(const Configuration&);
+
       bool
-	operator ==(const Configuration& c) const;
+      operator ==(const Configuration& c) const;
 
       /** Get the encoded size of this configuration object. */
       size_t get_encoded_size() const;

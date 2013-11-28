@@ -16,6 +16,12 @@ namespace crisp
 	next_module_id ( 0 )
     {}
 
+    Configuration::Configuration(const Configuration& config)
+      : num_modules ( config.num_modules ),
+        modules ( config.modules ),
+        next_module_id ( config.next_module_id )
+    {}
+
     Configuration::Configuration(Configuration&& c)
       : num_modules ( c.num_modules ),
 	modules ( std::move(c.modules) ),
@@ -31,6 +37,26 @@ namespace crisp
       modules.clear();
       next_module_id = 0;
     }
+
+    Configuration&
+    Configuration::operator =(const Configuration& c)
+    {
+      num_modules = c.num_modules;
+      modules = c.modules;
+      next_module_id = c.next_module_id;
+      return *this;
+    }
+
+
+    Configuration&
+    Configuration::operator =(Configuration&& c)
+    {
+      num_modules = c.num_modules;
+      modules = std::move(c.modules);
+      next_module_id = c.next_module_id;
+      return *this;
+    }
+
 
     bool
     Configuration::operator ==(const Configuration& c) const
