@@ -60,6 +60,12 @@ namespace crisp
 	return *(data + size - 1);
       }
 
+
+      /** Construct a value in-place in its storage location.  This avoids an
+       * extra copy or move operation when initializing the stored value.
+       *
+       * @param args Arguments to be passed to the object's constructor.
+       */
       template < typename... Args >
       ValueType&
       emplace(Args... args)
@@ -91,7 +97,8 @@ namespace crisp
 	    memset(data + old_capacity, 0, sizeof(ValueType) * (capacity - old_capacity));
 	  } }
 
-      /** Clear the contents of the array, but keep the allocated memory. */
+      /** Clear the contents of the array, but keep the allocated memory.
+       */
       inline void
       clear()
       {
@@ -143,7 +150,8 @@ namespace crisp
 	sa.data = nullptr;
       }
 
-      /** Constructor for creating an SArray from a std::initializer_list of the same type.
+      /** Constructor for creating an SArray from a std::initializer_list of the
+       * same type.
        *
        * @param _data Initializer list to copy.
        */
