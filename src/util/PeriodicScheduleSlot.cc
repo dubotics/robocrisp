@@ -76,25 +76,21 @@ namespace crisp
     PeriodicScheduleSlot::timer_expiry_handler(const boost::system::error_code& ec)
     {
       if ( ! ec )
-        {
-          if ( m_action_thread.joinable() )
-            m_action_thread.join();
-          if ( ! m_actions.empty() )
-            m_action_thread = std::thread([=]()
-                                          { for ( PeriodicAction& action : m_actions )
-                                              action.function(action); });
-        }
+        reset_timer();
       else if ( ec != boost::asio::error::operation_aborted )
         fprintf(stderr, "timer error: %s\n", ec.message().c_str());
-
-      if ( ! m_actions.empty() )
-        reset_timer();
     }
 
     void
     PeriodicScheduleSlot::reset_timer()
     {
       m_timer->expires_from_now(m_interval);
+
+      /* Set up the action callbacks for this run. */
+      for ( PeriodicAction& action : m_actions )
+        m_timer->async_wait(std::bind(&PeriodicAction::timer_expiry_handler, &action, std::placeholders::_1));
+
+      /* Set up the slot's expiry handler so we can reset the timer again.  */
       m_timer->async_wait(std::bind(&PeriodicScheduleSlot::timer_expiry_handler, this, std::placeholders::_1));
     }
   }

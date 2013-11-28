@@ -2,6 +2,7 @@
 #define crisp_util_PeriodicAction_hh 1
 
 #include <functional>
+#include <boost/system/error_code.hpp>
 
 namespace crisp
 {
@@ -30,6 +31,15 @@ namespace crisp
 
       PeriodicAction(PeriodicScheduleSlot* _slot,
                      Function _function);
+
+      /** Handler invoked by the slot's timer when it expires or is cancelled.
+       * This function calls the user function whenever called with an empty
+       * error object.
+       *
+       * @param error An error code that specifies why the function was called.
+       */
+      void
+      timer_expiry_handler(const boost::system::error_code& error);
 
       bool
       operator < (const PeriodicAction& action) const;

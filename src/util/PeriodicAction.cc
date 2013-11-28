@@ -11,6 +11,14 @@ namespace crisp
         function ( _function )
     {}
 
+    void
+    PeriodicAction::timer_expiry_handler(const boost::system::error_code& error)
+    {
+      if ( ! error )
+        function(*this);
+    }
+
+
     bool
     PeriodicAction::operator < (const PeriodicAction& action) const
     {
