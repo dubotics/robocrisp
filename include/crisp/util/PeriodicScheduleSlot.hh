@@ -98,6 +98,7 @@ namespace crisp
       PeriodicAction&
       emplace(Args... args);
 
+
       /** Remove an action from the slot.
        *
        * @param action The action to be removed.

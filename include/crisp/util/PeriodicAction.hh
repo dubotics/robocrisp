@@ -29,6 +29,9 @@ namespace crisp
       Function function;	/**< User-defined function to be called by the
 				   slot. */
 
+      bool active;              /**< When `true`, the slot will continue to
+                                   enqueue timer waits on behalf of the action. */
+
       PeriodicAction(PeriodicScheduleSlot* _slot,
                      Function _function);
 
@@ -47,14 +50,17 @@ namespace crisp
       bool
       operator == (const PeriodicAction& action) const;
 
-      /** Temporarily remove the action from its associated slot, preventing
-          it from running. */
+
+      /** Unset the `active` flag, preventing the action's associated slot from
+          enqueuing timer waits on the action. */
       void pause();
 
       /** Unpause an action previously paused with `pause`. */
       void unpause();
 
-      /** Cancel the action, removing it from its slot. */
+      /** Cancel the action, removing it from its slot.  The action object is
+       * destructed and should not be used after the call to this function.
+       */
       void cancel();
     };
 

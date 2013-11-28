@@ -1,4 +1,5 @@
 #include <crisp/util/PeriodicAction.hh>
+#include <crisp/util/PeriodicScheduleSlot.hh>
 
 namespace crisp
 {
@@ -8,16 +9,30 @@ namespace crisp
     PeriodicAction::PeriodicAction(PeriodicScheduleSlot* _slot,
                                    PeriodicAction::Function _function)
       : slot ( _slot ),
-        function ( _function )
+        function ( _function ),
+        active ( true )
     {}
 
     void
     PeriodicAction::timer_expiry_handler(const boost::system::error_code& error)
     {
-      if ( ! error )
+      if ( ( !error ) && action )
         function(*this);
     }
 
+    void
+    PeriodicAction::pause()
+    { active = false; }
+
+    void
+    PeriodicAction::unpause()
+    { active = true; }
+
+    void
+    PeriodicAction::cancel()
+    {
+      slot->remove(*this);
+    }
 
     bool
     PeriodicAction::operator < (const PeriodicAction& action) const
