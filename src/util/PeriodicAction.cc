@@ -16,7 +16,7 @@ namespace crisp
     void
     PeriodicAction::timer_expiry_handler(const boost::system::error_code& error)
     {
-      if ( ( !error ) && action )
+      if ( ( !error ) && active )
         function(*this);
     }
 
