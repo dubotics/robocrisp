@@ -24,7 +24,7 @@ namespace crisp
 	  { MTI_FOR(HANDSHAKE_RESPONSE),	true, false,	FlowDirection::ANY,	  nullptr },
 	  { MTI_FOR(SYNC), 			true, false, 	FlowDirection::ANY, 	  "SYNC" },
 	  { MTI_FOR(ERROR), 			true, true, 	FlowDirection::ANY, 	  nullptr },
-	  { MTI_FOR(CONFIGURATION_QUERY), 	false, false,	FlowDirection::TO_SLAVE,  "QUERY-CONFIGURATION" },
+	  { MTI_FOR(CONFIGURATION_QUERY), 	false, false,	FlowDirection::TO_SLAVE,  nullptr },
 	  { MTI_FOR(CONFIGURATION_RESPONSE), 	true, true,	FlowDirection::TO_MASTER, nullptr },
 	  { MTI_FOR(SENSOR_DATA), 		true, true, 	FlowDirection::TO_MASTER, nullptr },
 	  { MTI_FOR(MODULE_CONTROL), 		true, true,	FlowDirection::TO_SLAVE,  nullptr } };
