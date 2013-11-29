@@ -135,12 +135,12 @@ namespace crisp
       _SocketType m_socket;
 
       IOState
-      m_send,			/**< send (output) state variables  */
+        m_send,			/**< send (output) state variables  */
 	m_receive;		/**< receive (input) state variables */
 
       Message m_send_message;	/**< Message currently being sent. */
       boost::asio::streambuf
-      m_send_buffer;		/**< Buffer containing pending send data. */
+        m_send_buffer;		/**< Buffer containing pending send data. */
 
       MemoryEncodeBuffer m_receive_buffer; /**< Receive data buffer. */
       ReceiveStep m_receive_step;	/**< Most recently completed receive step. */

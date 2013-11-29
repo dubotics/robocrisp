@@ -37,7 +37,7 @@ namespace crisp
       /* ModuleControl(const ModuleControl& mc); */
 
       ModuleControl&
-	operator = (ModuleControl&& mc);
+      operator = (ModuleControl&& mc);
 
       /** Constructor used to build module control messages for transmission.
        *
@@ -98,7 +98,7 @@ namespace crisp
       /** Set the value of an input. */
       template < typename _T, typename _U >
 	inline ModuleControl&
-	set(const _U input, _T value)
+      set(const _U& input, _T value)
       {
 	DataValue<>* dv ( value_for(input) );
 	if ( dv )
@@ -125,8 +125,8 @@ namespace crisp
        * @param buf Input buffer
        */
       DecodeResult
-	decode(DecodeBuffer& buf,
-	       const Configuration& config);
+      decode(DecodeBuffer& buf,
+             const Configuration& config);
 
       /** Decode a ModuleControl instance from a byte buffer, returning a copy of the
        *	instance.
