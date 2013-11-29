@@ -10,16 +10,22 @@ namespace crisp
     const size_t Sensor<>::HeaderSize =
       offsetof(Sensor<>, data_type) + Sensor<>::DataType::TranscodeAsType::HeaderSize;
 
-    /* template <>
-     * Sensor<>::Sensor(const Sensor& s)
-     * : id ( s.id ),
-     *   type ( s.type ),
-     *   reporting_mode ( s.reporting_mode ),
-     *   name_length ( s.name_length ),
-     *   data_type ( s.data_type ),
-     *   name ( s.name ),
-     *   owns_name ( false )
-     * {} */
+    template <>
+    Sensor<>::Sensor(const Sensor& s)
+    : id ( s.id ),
+      type ( s.type ),
+      reporting_mode ( s.reporting_mode ),
+      name_length ( s.name_length ),
+      data_type ( s.data_type ),
+      name ( s.owns_name ? nullptr : s.name ),
+      owns_name ( s.owns_name )
+    {
+      if ( owns_name && s.name )
+        {
+          name = new char[name_length];
+          strncpy(name, s.name, name_length);
+        }
+    }
 
 
     template <>

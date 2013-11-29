@@ -84,10 +84,9 @@ namespace crisp
       static const size_t HeaderSize;
 
       Sensor();
-      Sensor(const Sensor&) = delete;
       Sensor(Sensor&& s);
       Sensor(uint16_t _id, SensorType _type, SensorReportingMode _mode, uint8_t _name_length, DataType&& _data_type, const char* _name);
-      /* Sensor(const Sensor& s); */
+      Sensor(const Sensor& s);
       ~Sensor();
 
       Sensor&
