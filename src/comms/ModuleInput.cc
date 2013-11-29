@@ -58,15 +58,21 @@ namespace crisp
     }
 
     /* copy constructor */
-    /* template<>
-     * ModuleInput<>::ModuleInput(const ModuleInput& mi)
-     * : input_id ( mi.input_id ),
-     *   /\* mode ( mi.mode ), *\/
-     *   name_length ( mi.name_length ),
-     *   data_type ( mi.data_type ),
-     *   name ( mi.name ),
-     *   owns_name ( false )
-     * {} */
+    template<>
+    ModuleInput<>::ModuleInput(const ModuleInput& mi)
+    : input_id ( mi.input_id ),
+      /* mode ( mi.mode ), */
+      name_length ( mi.name_length ),
+      data_type ( mi.data_type ),
+      name ( mi.owns_name ? nullptr : mi.name ),
+      owns_name ( mi.owns_name )
+    {
+      if ( owns_name && mi.name )
+        {
+          name = new char[name_length];
+          strncpy(name, mi.name, name_length);
+        }
+    }
 
     template<>
     ModuleInput<>::ModuleInput()

@@ -74,7 +74,7 @@ namespace crisp
     /* takes ownership of _name */
     ModuleInput(char* _name, uint8_t id, DataType&& _data_type/* , ModuleInputMode _mode = ModuleInputMode::ABSOLUTE */);
 
-    /* ModuleInput(const ModuleInput&) = default; */
+    ModuleInput(const ModuleInput& input);
 
 
     ~ModuleInput();
