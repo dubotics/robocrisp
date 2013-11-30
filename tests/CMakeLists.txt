@@ -14,3 +14,7 @@ target_link_libraries(controller-test crisp-input pthread)
 # PeriodicScheduler test
 add_executable(periodic-test periodic-test.cc)
 target_link_libraries(periodic-test crisp-util boost_system)
+
+
+add_executable(coroutines coroutines.cc)
+target_link_libraries(coroutines crisp-comms crisp-util boost_system)
