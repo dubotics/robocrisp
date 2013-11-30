@@ -47,7 +47,8 @@ namespace crisp
 	m_dispatch_sent_strand ( m_io_service ),
 	m_wait_mutex ( ),
 	m_wait_cv ( ),
-	dispatcher ( *this )
+        dispatcher ( *this ),
+        configuration ( )
     {
     }
 

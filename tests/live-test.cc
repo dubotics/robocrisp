@@ -187,6 +187,7 @@ server_main(typename Transport::acceptor& acceptor, NodeSet& nodes)
 	  /* We've got a connection.  Create a new protocol-node on the
 	   * connection and add it to our set of connected nodes. */
 	  Node* node ( new Node(std::move(socket), NodeRole::SLAVE) );
+          node->configuration = config; /* copy the configuration */
 	  nodes.emplace(node);
 
 	  /* Set up callbacks on the node. */
@@ -195,7 +196,7 @@ server_main(typename Transport::acceptor& acceptor, NodeSet& nodes)
 	  node->dispatcher.configuration_query.received = /* slave-specific callbacks */
 	    [&](Node& _node)
 	    {
-	      _node.send(Message(config));
+	      _node.send(Message(_node.configuration));
 	    };
 
 	  /* Launch the node's worker threads. */

@@ -177,6 +177,11 @@ namespace crisp
       std::condition_variable m_wait_cv;
 #endif
     public:
+      Configuration configuration; /**< Node's interface configuration.  If the
+                                    node is a master, this is the interface
+                                    available on the remote node; otherwise this
+                                    is the local configuration.  */
+
       /** Constructor.
        *
        * @param socket An open socket to be used for communication. 
