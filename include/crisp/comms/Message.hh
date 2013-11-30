@@ -62,6 +62,8 @@ namespace crisp
 
     struct Message
     {
+      using Buffer = crisp::util::Buffer;
+
       /** Default constructor. */
       Message();
 
