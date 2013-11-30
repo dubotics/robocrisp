@@ -48,6 +48,8 @@
 #  define ENUM_CLASS(name,base,...) enum class name : base { __VA_ARGS__ }
 #endif
 
+#include <cassert>
+
 namespace crisp
 {
   namespace comms
@@ -68,6 +70,29 @@ namespace crisp
 	       CONSISTENCY_ERROR,
 	       STREAM_ERROR
 	       );
+
+    static inline const char*
+    encode_result_to_string(EncodeResult er)
+    {
+      assert(er <= EncodeResult::STREAM_ERROR);
+      const char* strings[] = { "Success",
+                                "Insufficient space",
+                                "Consistency error",
+                                "Stream error" };
+      return strings[static_cast<uint8_t>(er)];
+    }
+
+    static inline const char*
+    decode_result_to_string(DecodeResult dr)
+    {
+      assert(dr <= DecodeResult::INVALID_DATA);
+      const char* strings[] = { "Success",
+                                "Buffer underflow",
+                                "Invalid data" };
+      return strings[static_cast<uint8_t>(dr)];
+    }
+
+
   }
 }
 
