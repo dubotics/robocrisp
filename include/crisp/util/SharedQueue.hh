@@ -42,6 +42,12 @@ namespace crisp
 	  m_cv ( )
       {}
 
+      SharedQueue(SharedQueue&& sq)
+        : BaseType(std::move(sq)),
+          m_mutex ( ),
+          m_cv ( )
+      {}
+
       using BaseType::empty;
       using BaseType::size;
       using BaseType::front;
