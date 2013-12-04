@@ -58,13 +58,13 @@ namespace crisp
 
     template <>
     const char*
-    DataDeclarationBase<>::float_type_name(uint8_t precision)
+    DataDeclarationBase<>::float_type_name(uint8_t width)
     {
-      switch ( precision )
+      switch ( width )
 	{
-	case 1: return "float";
-	case 2: return "double";
-	case 4: return "long double";
+	case sizeof(float): return "float";
+	case sizeof(double): return "double";
+	case sizeof(long double): return "long double";
 	default: return NULL;
 	}
     }
@@ -77,6 +77,7 @@ namespace crisp
 	{
 #if defined(__clang__)
 	case DataType::UNDEFINED: return "UNDEFINED";
+	  /* C99 defines a boolean type, but it's got a funny name. */
 	case DataType::BOOLEAN:   return lang == TargetLanguage::C ? "_Bool" : "bool";
 	case DataType::INTEGER:   return integer_type_name(width);
 	case DataType::FLOAT:     return float_type_name(width);
