@@ -4,6 +4,7 @@
 #include <crisp/comms/common.hh>
 #include <crisp/comms/Buffer.hh>
 #include <limits>
+#include <cmath>
 
 #ifdef SWIG
 #  define __attribute__(x)
