@@ -52,7 +52,7 @@ call_handler(_Node& node,
 	     MessageHandler<_Node, _BodyType>& handler,
              const Args&... args)
 {
-  _BodyType&& value ( m.as<_BodyType>(args...) );
+  _BodyType value ( m.as<_BodyType>(args...) );
 
   switch ( direction )
     {
