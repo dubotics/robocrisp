@@ -32,12 +32,12 @@ namespace crisp
      * Synchronization is tracked and managed within this class, and may be checked at any time
      * with the <code>has_sync</code> method.
      */
-    template < typename _SocketType = PROTOCOL_NODE_DEFAULT_SOCKET_TYPE >
+    template < typename _Socket = PROTOCOL_NODE_DEFAULT_SOCKET_TYPE >
     class ProtocolNode
     {
     public:
-      typedef _SocketType SocketType;
-      typedef std::mutex QueueMutexType;
+      typedef _Socket Socket;
+      typedef std::mutex QueueMutex;
       typedef NodeRole Role;
 
       /** The role of this node.  This value is used to check validity of sent and received
@@ -132,7 +132,7 @@ namespace crisp
       boost::asio::io_service& m_io_service;
 
       /** Socket abstraction. */
-      _SocketType m_socket;
+      _Socket m_socket;
 
       IOState
         m_send,			/**< send (output) state variables  */
@@ -190,7 +190,7 @@ namespace crisp
        *
        * @param device Device file to open.
        */
-      ProtocolNode(SocketType&& socket, Role role);
+      ProtocolNode(Socket&& socket, Role role);
 
       ~ProtocolNode();
 

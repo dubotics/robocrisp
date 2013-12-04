@@ -27,19 +27,19 @@ namespace crisp
 {
   namespace comms
   {
-    template < typename _SocketType>
-    ProtocolNode<_SocketType>::ProtocolNode(_SocketType&& socket, NodeRole role)
+    template < typename _Socket>
+    ProtocolNode<_Socket>::ProtocolNode(_Socket&& socket, NodeRole role)
       : role ( role ),
 	m_io_service ( socket.get_io_service() ),
 	m_socket ( std::move(socket) ),
-	m_send ( *this, std::mem_fn(&ProtocolNode<_SocketType>::send_next) ),
-	m_receive ( *this, std::mem_fn(&ProtocolNode<_SocketType>::receive_handler) ),
+	m_send ( *this, std::mem_fn(&ProtocolNode<_Socket>::send_next) ),
+	m_receive ( *this, std::mem_fn(&ProtocolNode<_Socket>::receive_handler) ),
 	m_send_buffer ( ),
 	m_receive_buffer ( 8192 ),
 	m_receive_step ( ReceiveStep::READ_HEADER ),
 	m_sync_thread ( ),
 	m_sync_strand ( m_io_service ),
-	m_sync_handler ( m_sync_strand.wrap(std::bind(std::mem_fn(&ProtocolNode<_SocketType>::send_sync), this, _1)) ),
+	m_sync_handler ( m_sync_strand.wrap(std::bind(std::mem_fn(&ProtocolNode<_Socket>::send_sync), this, _1)) ),
 	m_sync_timer ( m_io_service ),
 	m_synced ( true ),
 	m_stopping ( false ),
@@ -52,15 +52,15 @@ namespace crisp
     {
     }
 
-    template < typename _SocketType>
-    ProtocolNode<_SocketType>::~ProtocolNode()
+    template < typename _Socket>
+    ProtocolNode<_Socket>::~ProtocolNode()
     {
       halt();
     }
 
 
-    template < typename _SocketType>
-    ProtocolNode<_SocketType>::IOState::IOState(IOState&& state)
+    template < typename _Socket>
+    ProtocolNode<_Socket>::IOState::IOState(IOState&& state)
       : node ( state.node ),
       thread ( std::move(state.thread) ),
       strand ( state.strand.get_io_service() ),
@@ -69,25 +69,25 @@ namespace crisp
       remaining_bytes ( state.remaining_bytes )
     {}
 
-    template < typename _SocketType>
-    ProtocolNode<_SocketType>::IOState::~IOState()
+    template < typename _Socket>
+    ProtocolNode<_Socket>::IOState::~IOState()
     {
       if ( thread.joinable() )
 	thread.join();
     }
 
 
-    template < typename _SocketType>
+    template < typename _Socket>
     void
-    ProtocolNode<_SocketType>::IOState::run(std::function<void()> _handler)
+    ProtocolNode<_Socket>::IOState::run(std::function<void()> _handler)
     {
       thread = std::thread(_handler);
     }
   
 
-    template < typename _SocketType>
+    template < typename _Socket>
     void
-    ProtocolNode<_SocketType>::send_do(Message&& m)
+    ProtocolNode<_Socket>::send_do(Message&& m)
     {
       /* TRACE(); */
 
@@ -98,16 +98,16 @@ namespace crisp
       m_send_message.encode(buf);
       m_send.remaining_bytes = m_send_message.get_encoded_size();
 
-      /* const detail::MessageTypeInfo& info ( detail::get_type_info(m.type) );
+      /* const detail::MessageInfo& info ( detail::get_type_info(m.type) );
        * fprintf(stderr, "[0x%0x] \033[1;33mSending message:\033[0m %s (%zu bytes)\n", THREAD_ID, info.name, m_send.remaining_bytes); */
 
       /* Add the work item for the write operation. */
       boost::asio::async_write(m_socket, m_send_buffer, m_send.handler);
     }
 
-    template < typename _SocketType>
+    template < typename _Socket>
     void
-    ProtocolNode<_SocketType>::send_next(const boost::system::error_code& error,
+    ProtocolNode<_Socket>::send_next(const boost::system::error_code& error,
 					 std::size_t bytes_transferred)
     {
       /* TRACE(); */
@@ -148,9 +148,9 @@ namespace crisp
 	}
     }
 
-    template < typename _SocketType>
+    template < typename _Socket>
     void
-    ProtocolNode<_SocketType>::receive_resync()
+    ProtocolNode<_Socket>::receive_resync()
     {
       /* TRACE(); */
       fprintf(stderr, "[0x%0x] \033[1;31mSync lost\033[0m\n", THREAD_ID);
@@ -164,9 +164,9 @@ namespace crisp
       boost::asio::async_read_until(m_socket, m_read_until_buffer, m_read_until_string, m_receive.handler);
     }
 
-    template < typename _SocketType>
+    template < typename _Socket>
     void
-    ProtocolNode<_SocketType>::receive_init()
+    ProtocolNode<_Socket>::receive_init()
     { fprintf(stderr, "[0x%0x] \033[1;32mStarting read loop\033[0m\n", THREAD_ID);
 
       m_receive_buffer.reset();
@@ -176,9 +176,9 @@ namespace crisp
       m_receive.strand.post([&]{ receive_do(); });
     }
 
-    template < typename _SocketType>
+    template < typename _Socket>
     void
-    ProtocolNode<_SocketType>::receive_do()
+    ProtocolNode<_Socket>::receive_do()
     {
       assert(m_receive.remaining_bytes > 0);
       /* TRACE(); */
@@ -188,9 +188,9 @@ namespace crisp
 			      m_receive.handler);
     }
 
-    template < typename _SocketType>
+    template < typename _Socket>
     void
-    ProtocolNode<_SocketType>::receive_handler(const boost::system::error_code& error, std::size_t bytes_transferred)
+    ProtocolNode<_Socket>::receive_handler(const boost::system::error_code& error, std::size_t bytes_transferred)
     {
       /* TRACE(); */
       if ( ! m_stopping )
@@ -284,9 +284,9 @@ namespace crisp
 	}
     }
 
-    template < typename _SocketType>
+    template < typename _Socket>
     void
-    ProtocolNode<_SocketType>::send_sync(const boost::system::error_code& error)
+    ProtocolNode<_Socket>::send_sync(const boost::system::error_code& error)
     {
       /* TRACE(); */
     
@@ -306,18 +306,18 @@ namespace crisp
 	}
     }
 
-    template < typename _SocketType>
+    template < typename _Socket>
     void
-    ProtocolNode<_SocketType>::stop_sync_send_loop()
+    ProtocolNode<_Socket>::stop_sync_send_loop()
     {
       m_sync_timer.cancel();
       if ( m_sync_thread.joinable() )
 	m_sync_thread.join();
     }
 
-    template < typename _SocketType>
+    template < typename _Socket>
     void
-    ProtocolNode<_SocketType>::start_sync_send_loop()
+    ProtocolNode<_Socket>::start_sync_send_loop()
     {
       if ( ! m_sync_thread.joinable() )
 	{
@@ -326,18 +326,18 @@ namespace crisp
 	}
     }
 
-    template < typename _SocketType>
+    template < typename _Socket>
     void
-    ProtocolNode<_SocketType>::dispatch_received_loop()
+    ProtocolNode<_Socket>::dispatch_received_loop()
     {
       while ( ! m_stopping )
 	dispatcher.dispatch(m_receive.queue.next(), MessageDirection::INCOMING);
 	    
     }
 
-    template < typename _SocketType >
+    template < typename _Socket >
     bool
-    ProtocolNode<_SocketType>::launch()
+    ProtocolNode<_Socket>::launch()
     {
       bool out ( false );
       if ( ! m_send.thread.joinable() )
@@ -367,9 +367,9 @@ namespace crisp
       return out;
     }
 
-    template < typename _SocketType>
+    template < typename _Socket>
     void
-    ProtocolNode<_SocketType>::wait()
+    ProtocolNode<_Socket>::wait()
     {
       std::unique_lock<std::mutex> lock ( m_wait_mutex );
       while ( ! m_stopping )
@@ -377,9 +377,9 @@ namespace crisp
     }
 
 
-    template < typename _SocketType>
+    template < typename _Socket>
     void
-    ProtocolNode<_SocketType>::halt()
+    ProtocolNode<_Socket>::halt()
     {
       m_stopping = true;
       m_io_service.stop();
@@ -405,19 +405,19 @@ namespace crisp
       m_socket.close();
     }
 
-    template < typename _SocketType>
+    template < typename _Socket>
     void
-    ProtocolNode<_SocketType>::send(Message&& msg)
+    ProtocolNode<_Socket>::send(Message&& msg)
     {
       m_send.queue.push(msg);
     }
 
-    template < typename _SocketType >
+    template < typename _Socket >
     bool
-    ProtocolNode<_SocketType>::operator <(const ProtocolNode& other) const
+    ProtocolNode<_Socket>::operator <(const ProtocolNode& other) const
     {
-      return const_cast<_SocketType&>(m_socket).native_handle() <
-	const_cast<_SocketType&>(other.m_socket).native_handle();
+      return const_cast<_Socket&>(m_socket).native_handle() <
+	const_cast<_Socket&>(other.m_socket).native_handle();
     }
 
   }
