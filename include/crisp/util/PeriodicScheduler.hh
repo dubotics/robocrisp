@@ -27,9 +27,7 @@ namespace crisp
     {
       /** User-defined literal for conversion from rate to interval.  Note that
        *  this is semantically *wrong* because we're returning the reciprocal of
-       *  the constant...
-       *
-       *
+       *  the constant.  It is, however, very convenient.
        */
       inline constexpr PeriodicScheduleSlot::Duration
       operator "" _Hz(unsigned long long int n) {
