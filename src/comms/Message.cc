@@ -99,12 +99,17 @@ namespace crisp
       const detail::MessageTypeInfo& info ( detail::get_type_info(header.type) );
       if ( info.has_checksum )
 	assert(info.has_body);
-      if ( info.has_body )
-	assert((body && ! info.body) || info.body);
 
-      return sizeof(Header)
-	+ ( info.has_body ? ( body ? body->length : strlen(info.body)) : 0 )
-	+ ( info.has_checksum ? MESSAGE_CHECKSUM_SIZE : 0 );
+      if ( ! info.body && ! body )
+        return sizeof(Header) + header.length;
+      else
+        {
+          assert((body && ! info.body) || info.body);
+
+          return sizeof(Header)
+            + ( info.has_body ? ( body ? body->length : strlen(info.body)) : 0 )
+            + ( info.has_checksum ? MESSAGE_CHECKSUM_SIZE : 0 );
+        }
     }
 
     Message
@@ -116,9 +121,9 @@ namespace crisp
       const detail::MessageTypeInfo& info ( detail::get_type_info(out.header.type) );
 
       if ( info.has_body )
-	{ if ( ! info.body )
-	    out.body.reset(Buffer::copy_new(db.data + db.offset, out.header.length - ( info.has_checksum ? MESSAGE_CHECKSUM_SIZE : 0 )));
-	  db.offset += out.header.length - (info.has_checksum ? MESSAGE_CHECKSUM_SIZE : 0);
+	{ size_t body_size ( out.header.length - ( info.has_checksum ? MESSAGE_CHECKSUM_SIZE : 0 ) );
+          out.body.reset(new Buffer(body_size));
+	  db.read(out.body->data, body_size);
 	}
 
       if ( info.has_checksum )
@@ -150,10 +155,8 @@ namespace crisp
 	}
 
       if ( info.has_checksum )
-	{
-	  assert(info.has_body);
-	  uint32_t _checksum ( crisp::util::crc32(buf.data + initial_offset, buf.offset - initial_offset) );
-	  buf.write(&_checksum, MESSAGE_CHECKSUM_SIZE);
+	{ checksum = compute_checksum();
+          buf.write(&checksum, MESSAGE_CHECKSUM_SIZE);
 	}
 
       return EncodeResult::SUCCESS;
@@ -173,7 +176,9 @@ namespace crisp
 	buf.write(body ? body->data : info.body, body ? body->length : strlen(info.body));
 
       if ( info.has_checksum )
-	buf.write(&checksum, MESSAGE_CHECKSUM_SIZE);
+	{ checksum = compute_checksum();
+	  buf.write(&checksum, MESSAGE_CHECKSUM_SIZE);
+	}
 
       return EncodeResult::SUCCESS;
     }
@@ -201,8 +206,7 @@ namespace crisp
 
       if ( info.has_checksum )
 	{
-	  m.checksum = crisp::util::crc32(buf.data + initial_offset,
-					  buf.offset - initial_offset);
+	  m.checksum = m.compute_checksum();
 	  buf.write(&(m.checksum), MESSAGE_CHECKSUM_SIZE);
 	}
       return EncodeResult::SUCCESS;
@@ -217,12 +221,14 @@ namespace crisp
 
       /* Allocate memory for the buffers on the stack, since we don't need to pass it to any other
 	 functions.  */
-      size_t bufsize ( sizeof(Header) + ( body ? body->length : 0 ) );
+      size_t
+        body_size ( body ? body->length : strlen(info.body) ),
+        bufsize ( sizeof(Header) + body_size );
       char buf[bufsize];
 
       memcpy(buf, this, sizeof(Header));
       if ( body )
-	memcpy(buf + sizeof(Header), body->data, body->length);
+	memcpy(buf + sizeof(Header), body ? body->data : info.body, body_size);
 
       return crisp::util::crc32(buf, bufsize);
     }

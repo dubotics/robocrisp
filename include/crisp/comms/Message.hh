@@ -171,13 +171,13 @@ namespace crisp
     Header header;
     crisp::util::RefTraits<Buffer>::stored_ref body;
 
-    uint32_t checksum;		/**< Stored checksum value.  The checksum is computed over the
-				 * entire message (with the exception, of course, of the
-				 * checksum field itself).
-				 */
+      mutable uint32_t checksum; /**< Stored checksum value.  The checksum is computed over the
+                                  * entire message (with the exception, of course, of the
+                                  * checksum field itself).
+                                  */
   };
-}
   }
+}
 
 /**@}*/
 
