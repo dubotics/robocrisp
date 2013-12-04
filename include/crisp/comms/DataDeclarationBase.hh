@@ -484,7 +484,7 @@ namespace crisp
 	o.has_maximum_value == has_maximum_value && (! has_maximum_value || o.maximum_value == o.maximum_value );
     }
 
-    void set_neutral_value(_ValueType n)
+    void set_neutral(_ValueType n)
     { has_neutral_value = true;
       neutral_value = n; }
 
@@ -605,7 +605,7 @@ namespace crisp
 	o.has_maximum_value == has_maximum_value && (! has_maximum_value || o.maximum_value == o.maximum_value );
     }
 
-    void set_neutral_value(_ValueType n)
+    void set_neutral(_ValueType n)
     { has_neutral_value = true;
       neutral_value = n; }
 
