@@ -534,7 +534,8 @@ namespace crisp
     static constexpr bool is_signed = std::is_signed<_ValueType>::value;
 
     DataDeclarationBase()
-      : is_array ( false ),
+      : width ( 0 ),
+        is_array ( false ),
         has_neutral_value ( false ),
         has_minimum_value ( false ),
         has_maximum_value ( false ),
