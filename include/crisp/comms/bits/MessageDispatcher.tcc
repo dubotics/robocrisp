@@ -5,11 +5,11 @@
 
 using namespace crisp::comms;
 
-template < typename _SocketType, typename _BodyType >
+template < typename _Node, typename _BodyType >
 static typename std::enable_if<std::is_void<_BodyType>::value, void>::type
-call_handler(ProtocolNode<_SocketType>& node,
+call_handler(_Node& node,
 	     MessageDirection direction,
-	     MessageHandler<_SocketType, _BodyType>& handler)
+	     MessageHandler<_Node, _BodyType>& handler)
 {
   switch ( direction )
     {
@@ -25,11 +25,11 @@ call_handler(ProtocolNode<_SocketType>& node,
 }
 
 
-template < typename _SocketType, typename _BodyType >
+template < typename _Node, typename _BodyType >
 static typename std::enable_if<std::is_same<_BodyType, Message>::value, void>::type
-call_handler(ProtocolNode<_SocketType>& node,
+call_handler(_Node& node,
 	     const Message& m, MessageDirection direction,
-	     MessageHandler<_SocketType, _BodyType>& handler)
+	     MessageHandler<_Node, _BodyType>& handler)
 {
   switch ( direction )
     {
@@ -45,11 +45,11 @@ call_handler(ProtocolNode<_SocketType>& node,
 }
 
 
-template < typename _SocketType, typename _BodyType, typename... Args >
+template < typename _Node, typename _BodyType, typename... Args >
 static typename std::enable_if<!(std::is_void<_BodyType>::value||std::is_same<_BodyType, Message>::value), void>::type
-call_handler(ProtocolNode<_SocketType>& node,
+call_handler(_Node& node,
 	     const Message& m, MessageDirection direction,
-	     MessageHandler<_SocketType, _BodyType>& handler,
+	     MessageHandler<_Node, _BodyType>& handler,
              const Args&... args)
 {
   _BodyType&& value ( m.as<_BodyType>(args...) );
@@ -72,8 +72,8 @@ namespace crisp
 {
   namespace comms
   {
-    template < typename _SocketType >
-    MessageDispatcher<_SocketType>::MessageDispatcher(ProtocolNode<_SocketType>& node)
+    template < typename _Node >
+    MessageDispatcher<_Node>::MessageDispatcher(_Node& node)
       : m_node ( &node ),
 	handshake ( ),
 	handshake_response ( ),
@@ -84,13 +84,13 @@ namespace crisp
     {}
 
 
-    template < typename _SocketType >
-    MessageDispatcher<_SocketType>::~MessageDispatcher()
+    template < typename _Node >
+    MessageDispatcher<_Node>::~MessageDispatcher()
     {}
 
-    template < typename _SocketType >
+    template < typename _Node >
     void
-    MessageDispatcher<_SocketType>::dispatch(const Message& message, MessageDirection direction) throw ( std::runtime_error )
+    MessageDispatcher<_Node>::dispatch(const Message& message, MessageDirection direction) throw ( std::runtime_error )
     {
       switch ( message.header.type )
 	{

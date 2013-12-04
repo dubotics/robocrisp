@@ -239,7 +239,7 @@ namespace crisp
       { m_send.queue.emplace(args...); }
       
 
-      MessageDispatcher<_SocketType> dispatcher;
+      MessageDispatcher<ProtocolNode> dispatcher;
 
       bool
       operator <(const ProtocolNode& other) const;

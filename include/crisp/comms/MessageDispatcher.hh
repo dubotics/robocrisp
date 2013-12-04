@@ -8,8 +8,6 @@ namespace crisp
 {
   namespace comms
   {
-    template < typename _SocketType > class ProtocolNode;
-
     struct Handshake;
     struct HandshakeResponse;
     struct Configuration;
@@ -19,19 +17,19 @@ namespace crisp
 	       INCOMING,
 	       OUTGOING);
 
-    template < typename _SocketType >
+    template < typename _Node >
     class MessageDispatcher
     {
     public:
 
-      MessageDispatcher(ProtocolNode<_SocketType>& node);
+      MessageDispatcher(_Node& node);
       virtual ~MessageDispatcher();
 
       /* MessageDispatcher&
        * operator = (MessageDispatcher&& md); */
 
     private:
-      ProtocolNode<_SocketType>* m_node;
+      _Node* m_node;
 
 
     public:
@@ -39,12 +37,12 @@ namespace crisp
        */
       void dispatch(const Message& message, MessageDirection direction) throw ( std::runtime_error );
 
-      MessageHandler<_SocketType,Handshake> handshake;
-      MessageHandler<_SocketType,HandshakeResponse> handshake_response;
-      MessageHandler<_SocketType,void> sync;
-      MessageHandler<_SocketType,void> configuration_query;
-      MessageHandler<_SocketType,Configuration> configuration_response;
-      MessageHandler<_SocketType,ModuleControl> module_control;
+      MessageHandler<_Node,Handshake> handshake;
+      MessageHandler<_Node,HandshakeResponse> handshake_response;
+      MessageHandler<_Node,void> sync;
+      MessageHandler<_Node,void> configuration_query;
+      MessageHandler<_Node,Configuration> configuration_response;
+      MessageHandler<_Node,ModuleControl> module_control;
 
     };
   }
