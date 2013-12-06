@@ -23,6 +23,7 @@ Options:\n\
 
 #include <boost/asio/connect.hpp>
 #include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/signal_set.hpp>
 #include <crisp/comms/BasicNode.hh>
 #include <crisp/comms/NodeServer.hh>
 
@@ -168,9 +169,17 @@ main(int argc, char* argv[])
           node.launch();
           node.send(MessageType::CONFIGURATION_QUERY);
 
+          boost::asio::signal_set ss ( service, SIGINT );
+          ss.async_wait([&](const boost::system::error_code& error, int sig)
+                        {
+                          if ( ! error )
+                            {
+                              node.halt();
+                              service.stop();
+                            }
+                        });
           service.run();
 	}
-      
     }
 
   return 0;

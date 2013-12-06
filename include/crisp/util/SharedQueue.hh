@@ -48,6 +48,15 @@ namespace crisp
           m_cv ( )
       {}
 
+      /** Wake all threads waiting for an item from this queue.  This is a stopgap solution for
+       * properly halting network nodes.
+       */
+      inline void
+      wake_all()
+      {
+        m_cv.notify_all();
+      }
+
       using BaseType::empty;
       using BaseType::size;
       using BaseType::front;

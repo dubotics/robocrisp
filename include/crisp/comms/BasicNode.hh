@@ -125,17 +125,22 @@ namespace crisp
             thread = std::thread ( [&]()
                                    { while ( socket.is_open() )
                                        io_service.run_one();
-
-                                     /* Run any remaining handlers to ensure all threads exit.  */
-                                     io_service.poll_one();
                                    });
       }
 
 
+      /** Halt the node by closing the socket and waiting for its worker threads to finish.  */
       void halt()
       { socket.close();
+        outgoing_queue.wake_all();
+        incoming_queue.wake_all();
+        sync_action->cancel();
+
+        io_service.poll();
+
         for ( std::thread& thread : run_threads )
-          thread.join();
+          if ( thread.joinable() )
+            thread.join();
       }
 
       /** Enqueue an outgoing message.  The message will be sent once all previously-queued outgoing
@@ -167,8 +172,10 @@ namespace crisp
         while ( socket.is_open() )
           {
             Message message ( incoming_queue.next() );
-            dispatcher.dispatch(message, MessageDirection::INCOMING);
+            if ( socket.is_open() )
+              dispatcher.dispatch(message, MessageDirection::INCOMING);
           }
+        fprintf(stderr, "[0x%x] Exiting dispatch loop.\n", THREAD_ID);
       }
 
       /** Send outgoing messages until the socket is closed.  */
@@ -179,6 +186,9 @@ namespace crisp
           {
             /* Fetch the next message to send, waiting if necessary. */
             Message message ( outgoing_queue.next() );
+
+            if ( ! socket.is_open() )
+              break;
 
             /* Encode it. */
             MemoryEncodeBuffer meb ( message.get_encoded_size() );
@@ -203,6 +213,14 @@ namespace crisp
                 break;
               }
 
+            if ( socket.is_open() )
+              {
+                if ( ! ec  )    /* Dispatch the 'sent' handlers. */
+                  io_service.post(std::bind(&MessageDispatcher<BasicNode>::dispatch, &dispatcher,
+                                            message, MessageDirection::OUTGOING));
+                else            /* Reinsert the message for another go later. */
+                  outgoing_queue.emplace(std::move(message));
+              }
             if ( ! ec )             /* Dispatch the 'sent' handlers. */
               io_service.post(std::bind(&MessageDispatcher<BasicNode>::dispatch, &dispatcher,
                                         message, MessageDirection::OUTGOING));
@@ -211,8 +229,9 @@ namespace crisp
           
 
           }
-        socket.close();
-        sync_action->cancel();
+        fprintf(stderr, "[0x%x] Exiting send loop.\n", THREAD_ID);
+
+        io_service.post(std::bind(&BasicNode::halt, this));
       }
 
 
@@ -304,8 +323,9 @@ namespace crisp
             else
               incoming_queue.emplace(std::move(m));
           }
+        fprintf(stderr, "[0x%x] Exiting receive loop.\n", THREAD_ID);
 
-        socket.close();
+        io_service.post(std::bind(&BasicNode::halt, this));
       }
     };
   }
