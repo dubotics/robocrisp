@@ -93,12 +93,9 @@ namespace crisp
 	inline Module&
 	add_sensor(Sensor<_T>&& sensor)
       { 
-	if ( sensors.owns_data )
-	  {
-	    ++num_sensors;
-	    sensors.push(static_cast<Sensor<> >(sensor));
-	    sensors[num_sensors - 1].id = next_sensor_id++;
-	  }
+        ++num_sensors;
+        sensors.push(static_cast<Sensor<> >(sensor));
+        sensors[num_sensors - 1].id = next_sensor_id++;
 
 	return *this;
       }
@@ -112,12 +109,9 @@ namespace crisp
 	inline Module&
 	add_input(ModuleInput<_T>&& input)      
       {
-	if ( inputs.owns_data || ! inputs.data )
-	  {
-	    ++num_inputs;
-	    inputs.push(input);
-	    inputs.back().input_id = next_input_id++;
-	  }
+        ++num_inputs;
+        inputs.push(input);
+        inputs.back().input_id = next_input_id++;
       
 	return *this;
       }

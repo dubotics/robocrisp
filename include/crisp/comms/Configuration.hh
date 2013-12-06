@@ -54,7 +54,7 @@ namespace crisp
       DecodeResult decode(DecodeBuffer& buf);
 
       static inline TranscodeAsType
-	decode_copy(DecodeBuffer& buf)
+      decode_copy(DecodeBuffer& buf)
       { TranscodeAsType out; out.decode(buf);
 	return out; }
 
@@ -63,18 +63,13 @@ namespace crisp
        * @return @p module to enable buildup of the module instance.
        */
       template < typename... _Args >
-	inline Module&
-	add_module(_Args... args)
+      inline Module&
+      add_module(_Args... args)
       { 
-	if ( modules.owns_data )
-	  {
-	    ++num_modules;
-	    Module& out ( modules.emplace(args...) );
-	    out.id = next_module_id++;
-	    return out;
-	  }
-	else
-	  return modules[num_modules - 1];
+        ++num_modules;
+        Module& out ( modules.emplace(args...) );
+        out.id = next_module_id++;
+        return out;
       }
 
 #ifdef SWIG

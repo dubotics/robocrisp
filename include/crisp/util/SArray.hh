@@ -36,7 +36,6 @@ namespace crisp
       ValueType* data;
       size_t size;
       size_t capacity;
-      bool owns_data;
 
       /**@begin STL-style accessors
        *@{
@@ -52,11 +51,29 @@ namespace crisp
       inline const ValueType* end() const { return data + size; }
       /**@}*/
 
+
+      /** Push a value onto the end of the array via move constructor.
+       *
+       * @param v Value to move into the array.
+       */
       ValueType&
       push(ValueType&& v)
-      { ensure_capacity(size + 1);
+      {
+        ensure_capacity(size + 1);
 	static_assert(std::is_rvalue_reference<ValueType&&>::value, "push argument resolves to non-Rvalue reference!");
 	new ( data + size++ ) ValueType(std::move(v));
+	return *(data + size - 1);
+      }
+
+      /** Push a value onto the end of the array via copy constructor.
+       *
+       * @param v Value to copy.
+       */
+      ValueType&
+      push(const ValueType& v)
+      {
+        ensure_capacity(size + 1);
+	new ( data + size++ ) ValueType(v);
 	return *(data + size - 1);
       }
 
@@ -81,7 +98,8 @@ namespace crisp
        */
       inline void
       ensure_capacity(size_t reqd_capacity)
-      { if ( capacity < reqd_capacity )
+      {
+        if ( capacity < reqd_capacity )
 	  {
 	    size_t old_capacity ( capacity );
 
@@ -95,14 +113,15 @@ namespace crisp
 
 	    data = static_cast<ValueType*>(realloc(data, capacity * sizeof(ValueType)));
 	    memset(data + old_capacity, 0, sizeof(ValueType) * (capacity - old_capacity));
-	  } }
+	  }
+      }
 
       /** Clear the contents of the array, but keep the allocated memory.
        */
       inline void
       clear()
       {
-	if ( data && owns_data )
+	if ( data )
 	  {
 	    for ( size_t i = 0; i < size; ++i )
 	      data[i].~ValueType();
@@ -110,42 +129,42 @@ namespace crisp
 	  }
       }
 
-      inline SArray() noexcept
-	: data ( nullptr ),
-	size ( 0 ),
-	capacity ( 0 ),
-	owns_data ( true )
+      inline
+      SArray() noexcept
+        : data ( nullptr ),
+	  size ( 0 ),
+	  capacity ( 0 )
       {}
 
 
-      inline SArray(size_t s)
-      : data ( s > 0 ? static_cast<ValueType*>(malloc(s * sizeof(ValueType))) : nullptr),
-	size ( 0 ),
-	capacity ( s ),
-	owns_data ( true )
+      inline
+      SArray(size_t s)
+        : data ( s > 0 ? static_cast<ValueType*>(malloc(s * sizeof(ValueType))) : nullptr),
+	  size ( 0 ),
+	  capacity ( s )
       {
 	if ( data )
 	  memset(data, 0, capacity * sizeof(ValueType));
       }
 
 
-      inline ~SArray()
+      inline
+      ~SArray()
       {
-	if ( data && owns_data )
+	if ( data )
 	  {
 	    clear();
-	    if ( data ) free(data);
+            free(data);
 	    data = nullptr;
-	    owns_data = false;
 	  }
       }
 
       /** Move constructor. */
-      inline SArray(SArray&& sa)
-      : data ( sa.data ),
-	size ( sa.size ),
-	capacity ( sa.capacity ),
-	owns_data ( sa.owns_data )
+      inline
+      SArray(SArray&& sa)
+        : data ( sa.data ),
+          size ( sa.size ),
+          capacity ( sa.capacity )
       {
 	sa.data = nullptr;
       }
@@ -159,7 +178,7 @@ namespace crisp
 	: SArray(_data.size())
       {
 	for ( const ValueType& f : _data )
-	  push(const_cast<ValueType&&>(std::move(f)));
+	  emplace(f);
       }
 
       /** Copy constructor.  Copies from the the values in the provided SArray.
@@ -172,8 +191,9 @@ namespace crisp
       SArray(const SArray& s)
 	: SArray( s.size )
       {
-        for ( size_t i ( 0 ); i < size; ++i )
+        for ( size_t i ( 0 ); i < s.size; ++i )
           emplace(s[i]);
+
       }
 
       /** Copy-assignment operator.  Copies from the the values in the provided
@@ -186,13 +206,13 @@ namespace crisp
        *
        * @return `*this`
        */
-      SArray&
-      operator=(const SArray& s)
+      inline SArray&
+      operator =(const SArray& s)
       {
         clear();
         ensure_capacity(s.capacity);
 
-        for ( size_t i ( 0 ); i < size; ++i )
+        for ( size_t i ( 0 ); i < s.size; ++i )
           emplace(s[i]);
 
         return *this;
@@ -206,10 +226,8 @@ namespace crisp
 	data = sa.data;
 	size = sa.size;
 	capacity = sa.capacity;
-	owns_data = sa.owns_data;
 
 	sa.data = nullptr;
-	sa.owns_data = false;
 
 	return *this;
       }
