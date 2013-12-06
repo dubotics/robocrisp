@@ -149,6 +149,8 @@ main(int argc, char* argv[])
                   fprintf(stderr, "    module \"%s\"\n", module.name);
                   for ( const ModuleInput<>& input : module.inputs )
                     fprintf(stderr, "        input \"%s\" (%s)\n", input.name, input.data_type.type_name());
+                  for ( const Sensor<>& sensor : module.sensors )
+                    fprintf(stderr, "       sensor \"%s\" (%s)\n", sensor.name, sensor.data_type.type_name());
                 }
 	    };
 
