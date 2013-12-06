@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <thread>
 #include <type_traits>
 
 #include <crisp/comms/config.h>
