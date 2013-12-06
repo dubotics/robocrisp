@@ -141,6 +141,7 @@ namespace crisp
     ModuleControl::value_for(const ModuleInput<>& input) const
     {
 #if defined(ENABLE_ASSERT) && ENABLE_ASSERT
+      assert(module != nullptr);
       size_t num_values ( get_num_values() );
       assert(num_values <= Module::MAX_INPUTS);
       assert(input.input_id < module->num_inputs);
