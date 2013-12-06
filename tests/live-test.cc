@@ -104,6 +104,9 @@ main(int argc, char* argv[])
   if ( mode == Mode::SERVER )
     {
       crisp::comms::NodeServer<Node> server ( service, target_endpoint );
+
+      /* Set up the server's interface configuration with the following test config. */
+      using namespace crisp::comms::keywords;
       server.configuration.add_module( "drive", 2, 2)
         .add_input<int8_t>({ "speed", { _neutral = 0, _minimum = -127, _maximum = 127 } })
         .add_input<int8_t>({ "turn", { _neutral = 0, _minimum = -127, _maximum = 127 } })
@@ -158,16 +161,12 @@ main(int argc, char* argv[])
                                    fprintf(stderr, "Outgoing queue size: %zu\n", node.outgoing_queue.size());
                                  }
                                else
-                                 {
-                                   action.cancel();
-                                   run_flag = false;
-                                 }
+                                 action.cancel();
                              });
           node.launch();
           node.send(MessageType::CONFIGURATION_QUERY);
 
           service.run();
-          controller_thread.join();
 	}
       
     }
