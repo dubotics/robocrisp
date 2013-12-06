@@ -1,6 +1,11 @@
 # `live-test` is the network-node test utility.
 add_executable(live-test live-test.cc)
-target_link_libraries(live-test crisp-comms crisp-util)
+target_link_libraries(live-test
+  crisp-comms
+  crisp-util
+  ${Boost_COROUTINE_LIBRARY_RELEASE}
+  ${Boost_CONTEXT_LIBRARY_RELEASE}
+  ${Boost_SYSTEM_LIBRARY_RELEASE})
 
 # `transcoder-test` is used to test the encoding and decoding of the various types.
 add_executable(transcoder-test transcoder-test.cc)
@@ -16,5 +21,3 @@ add_executable(periodic-test periodic-test.cc)
 target_link_libraries(periodic-test crisp-util boost_system)
 
 
-add_executable(coroutines coroutines.cc)
-target_link_libraries(coroutines crisp-comms crisp-util boost_system)
