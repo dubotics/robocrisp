@@ -178,7 +178,8 @@ namespace crisp
 
     bool Module::operator ==(const Module& o) const
     {
-      return (!memcmp(this, &o, HeaderSize)) && ( name_length == 0 || (name && !memcmp(name, o.name, name_length)) ) &&
+      return (!memcmp(this, &o, HeaderSize)) &&
+        (name_length == 0 || (name && o.name && !memcmp(name, o.name, name_length))) &&
 	(__extension__
 	 ({ bool u ( true );
 	   for ( uint8_t i ( 0 ); i < num_sensors; ++i )
