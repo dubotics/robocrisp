@@ -126,7 +126,7 @@ namespace crisp
 
                 /* Set up callbacks on the node. */
                 node->dispatcher.configuration_query.received =
-                  [&](Node& _node) { _node.send(_node.configuration); };
+                  [&](Node& _node) { _node.send(configuration); };
 
 
                 /* Launch the node's worker threads. */
