@@ -118,15 +118,12 @@ namespace crisp
                  * connection and add it to our set of connected nodes. */
                 Node* node ( new Node(std::move(socket), NodeRole::SLAVE) );
 
-                /** @fixme: There's a bug somewhere in the copy-constructor of
-                    `crisp::comms::Module` that prevents the following (commented-out) lines
-                    from working.  */
-                /* node->configuration = config; /\* copy the configuration *\/
-                 * assert(node->configuration == config); */
+                node->configuration = configuration; /* copy the configuration */
+                assert(node->configuration == configuration);
 
                 /* Set up callbacks on the node. */
                 node->dispatcher.configuration_query.received =
-                  [&](Node& _node) { _node.send(configuration); };
+                  [&](Node& _node) { _node.send(_node.configuration); };
 
 
                 /* Launch the node's worker threads. */
