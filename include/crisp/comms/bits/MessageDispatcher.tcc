@@ -2,6 +2,7 @@
 #include <crisp/comms/Handshake.hh>
 #include <crisp/comms/Configuration.hh>
 #include <crisp/comms/ModuleControl.hh>
+#include <crisp/util/PeriodicScheduler.hh>
 
 namespace crisp
 {
@@ -142,7 +143,13 @@ namespace crisp
                   hs.acknowledge == HandshakeAcknowledge::ACK ? "\033[32maccepts\033[0m" : "\033[31mrejects\033[0m",
                   hs.role == NodeRole::MASTER ? "MASTER" : (hs.role == NodeRole::SLAVE ? "SLAVE" : "ERROR"));
 
-          if ( hs.acknowledge != HandshakeAcknowledge::ACK )
+          if ( hs.acknowledge == HandshakeAcknowledge::ACK )
+            {
+              using namespace crisp::util::literals;
+              _node.scheduler.schedule(1_Hz, [&](crisp::util::PeriodicAction&)
+                                       { _node.send(MessageType::SYNC); });
+            }
+          else
             _node.halt();
         };
 

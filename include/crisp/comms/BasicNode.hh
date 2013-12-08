@@ -124,10 +124,6 @@ namespace crisp
                                                  this, std::placeholders::_1));
         boost::asio::spawn(m_io_service, std::bind(&BasicNode::receive_loop, this,
                                                  std::placeholders::_1));
-        using namespace crisp::util::literals;
-
-        m_sync_action = &scheduler.schedule(1_Hz, [&](crisp::util::PeriodicAction&)
-                                            { send(MessageType::SYNC); });
 
         send(Handshake { PROTOCOL_VERSION, role });
       }
