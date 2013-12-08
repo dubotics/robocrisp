@@ -9,6 +9,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <queue>
+#include <thread>
 
 namespace crisp
 {
@@ -127,8 +128,18 @@ namespace crisp
           {
             std::unique_lock<Mutex> lock ( m_mutex );
 
-            while ( empty() && ! m_aborted )
-              m_cv.wait(lock);
+            if ( empty() )
+              {
+                /* Signal handlers seem to get confused when initiated while `next` is called from
+                   a Boost.Asio coroutine function. */
+                sigset_t sigset, oldset;
+                sigfillset(&sigset);
+
+                pthread_sigmask(SIG_BLOCK, &sigset, &oldset);
+                while ( empty() && ! m_aborted )
+                  m_cv.wait(lock);
+                pthread_sigmask(SIG_SETMASK, &oldset, NULL);
+              }
 
             if ( ! m_aborted )
               {
