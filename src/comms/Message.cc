@@ -62,6 +62,7 @@ namespace crisp
 	checksum ( 0 )
     {
       TRACE();
+      m.body.reset(nullptr);
     }
 
     Message::Message(const Message& m)
