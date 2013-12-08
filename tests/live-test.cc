@@ -155,17 +155,6 @@ main(int argc, char* argv[])
                 }
 	    };
 
-          using namespace crisp::util::literals;
-          node.scheduler.schedule(1_Hz, [&](crisp::util::PeriodicAction& action)
-                             {
-                               if ( node.socket.is_open() )
-                                 {
-                                   fprintf(stderr, "Incoming queue size: %zu\n", node.incoming_queue.size());
-                                   fprintf(stderr, "Outgoing queue size: %zu\n", node.outgoing_queue.size());
-                                 }
-                               else
-                                 action.cancel();
-                             });
           node.launch();
           node.send(MessageType::CONFIGURATION_QUERY);
 
@@ -175,10 +164,10 @@ main(int argc, char* argv[])
                           if ( ! error )
                             {
                               node.halt();
-                              service.stop();
                             }
                         });
-          service.run();
+          while ( ! node.stopped )
+            service.run_one();
 	}
     }
 

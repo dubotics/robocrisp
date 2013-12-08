@@ -35,31 +35,51 @@ namespace crisp
     /** Basic Message node for use with Boost.Asio and IP-based protocols.
      */
     template < typename _Protocol >
-    struct BasicNode
+    class BasicNode
     {
+    public:
       typedef _Protocol Protocol;
       typedef typename Protocol::socket Socket;
 
+    private:
       /** Reference to the IO service used by the node's components. */
-      boost::asio::io_service& io_service;
+      boost::asio::io_service& m_io_service;
 
       /** Connected socket used for communication. */
-      Socket socket;
+      Socket m_socket;
+
+      /** Handle to the scheduled period-action used for synchronization.  */
+      crisp::util::PeriodicAction* m_sync_action;
+
+      crisp::util::SharedQueue<Message>
+        m_outgoing_queue,         /**< Outgoing message queue. */
+        m_incoming_queue;         /**< Incoming message queue. */
+
+      /** Whether the node's `halt` method has been called. */
+      std::atomic_flag m_halting;
+
+      /** Referent for `stopped`.  This is used to provide a way for users of BasicNode to
+          determine whether or not the node has been shut down. */
+      std::atomic<bool> m_stopped;
+
+      /** Handles for the worker threads used to handle the node's I/O handlers.
+       *
+       * *Three* is the minimum number of threads allowable here: the send and dispatch loops each
+       * block when waiting for new outgoing and incoming messages, respectively, so we need at
+       * least one other thread available to execute asynchronous event handlers.
+       */
+      std::thread m_run_threads[3];
+
+    public:
+      /** Public "node-is-halting-or-stopped" flag. */
+      const std::atomic<bool>& stopped;
 
       /** A scheduler for managing periodic communication (and any user-set actions) on the node.
           Within BasicNode, this is used for producing synchronization messages.  */
       crisp::util::PeriodicScheduler scheduler;
 
-      /** Handle to the scheduled period-action used for synchronization.  */
-      crisp::util::PeriodicAction* sync_action;
-
-      crisp::util::SharedQueue<Message>
-        outgoing_queue,         /**< Outgoing message queue. */
-        incoming_queue;         /**< Incoming message queue. */
-
-
       /** Node role specified at object construction. */
-      NodeRole role;
+      const NodeRole role;
 
       /** Configuration object.
        *
@@ -74,14 +94,6 @@ namespace crisp
       /** Message dispatcher and user-set callbacks container.  Provides  */
       MessageDispatcher<BasicNode> dispatcher;
 
-      /** Handles for the worker threads used to handle the node's I/O handlers.
-       *
-       * *Three* is the minimum number of threads allowable here: the send and dispatch loops each
-       * block when waiting for new outgoing and incoming messages, respectively, so we need at
-       * least one other thread available to execute asynchronous event handlers.
-       */
-      std::thread run_threads[3];
-
 
       /** Initialize a node using the given socket and role.
        *
@@ -92,25 +104,30 @@ namespace crisp
        *     node.
        */
       BasicNode(Socket&& _socket, NodeRole _role)
-        : io_service ( _socket.get_io_service() ),
-          scheduler ( io_service ),
-          socket ( std::move(_socket) ),
-          outgoing_queue ( ),
-          incoming_queue ( ),
-          sync_action ( nullptr ),
+        : m_io_service ( _socket.get_io_service() ),
+          m_socket ( std::move(_socket) ),
+          m_sync_action ( nullptr ),
+          m_outgoing_queue ( ),
+          m_incoming_queue ( ),
+          m_halting ( ),
+          m_stopped ( false ),
+          m_run_threads ( ),
+          stopped ( m_stopped ),
+          scheduler ( m_io_service ),
           role ( _role ),
           configuration ( ),
-          dispatcher ( *this ),
-          run_threads ( )
+          dispatcher ( *this )
       {
-        boost::asio::spawn(io_service, std::bind(&BasicNode::send_loop,
+        m_halting.clear();
+
+        boost::asio::spawn(m_io_service, std::bind(&BasicNode::send_loop,
                                                  this, std::placeholders::_1));
-        boost::asio::spawn(io_service, std::bind(&BasicNode::receive_loop, this,
+        boost::asio::spawn(m_io_service, std::bind(&BasicNode::receive_loop, this,
                                                  std::placeholders::_1));
         using namespace crisp::util::literals;
 
-        sync_action = &scheduler.schedule(1_Hz, [&](crisp::util::PeriodicAction&)
-                                          { send(MessageType::SYNC); });
+        m_sync_action = &scheduler.schedule(1_Hz, [&](crisp::util::PeriodicAction&)
+                                            { send(MessageType::SYNC); });
 
         send(Handshake { PROTOCOL_VERSION, role });
       }
@@ -119,30 +136,47 @@ namespace crisp
       /** Launch worker threads to handle the node's IO. */
       void launch()
       {
-        run_threads[0] = std::thread(std::bind(&BasicNode::dispatch_received_loop, this));
-        for ( std::thread& thread : run_threads )
+        m_run_threads[0] = std::thread(std::bind(&BasicNode::dispatch_received_loop, this));
+        for ( std::thread& thread : m_run_threads )
           if ( ! thread.joinable() ) /* skip initialized handles (e.g. dispatch thread...) */
-            thread = std::thread ( [&]()
-                                   { while ( socket.is_open() )
-                                       io_service.run_one();
-                                   });
+            thread = std::thread ( std::bind(BasicNode::worker_main,
+                                             std::ref(m_io_service),
+                                             std::cref(m_stopped)) );
+      }
+
+      static void
+      worker_main(boost::asio::io_service& io_service,
+                  const std::atomic<bool>& stopping)
+      {
+        while ( ! stopping )
+          io_service.run_one();
       }
 
 
       /** Halt the node by closing the socket and waiting for its worker threads to finish.  */
       void halt()
-      { socket.close();
-        outgoing_queue.wake_all();
-        incoming_queue.wake_all();
-        sync_action->cancel();
+      {
+        if ( ! m_halting.test_and_set() )
+          {
+            m_stopped = true;
+            fprintf(stderr, "[0x%x] Halting... ", THREAD_ID);
 
-        io_service.poll();
+            if ( m_sync_action )
+              m_sync_action->cancel();
+            m_sync_action = nullptr;
 
-        for ( std::thread& thread : run_threads )
-          if ( thread.joinable() )
-            thread.join();
+            m_socket.close();
+            m_outgoing_queue.wake_all();
+            m_incoming_queue.wake_all();
+
+            m_io_service.poll();
+
+            for ( std::thread& thread : m_run_threads )
+              if ( thread.joinable() && thread.get_id() != std::this_thread::get_id() )
+                thread.join();
+            fprintf(stderr, "done.\n");
+          }
       }
-
       /** Enqueue an outgoing message.  The message will be sent once all previously-queued outgoing
        * messages have been sent.
        *
@@ -150,7 +184,7 @@ namespace crisp
        */
       void send(const Message& m)
       {
-        outgoing_queue.push(m);
+        m_outgoing_queue.push(m);
       }
 
       /** Enqueue an outgoing message.  The message will be sent once all previously-queued outgoing
@@ -160,7 +194,7 @@ namespace crisp
        */
       void send(Message&& m)
       {
-        outgoing_queue.emplace(std::move(m));
+        m_outgoing_queue.emplace(std::move(m));
       }
 
 
@@ -169,26 +203,36 @@ namespace crisp
       void
       dispatch_received_loop()
       {
-        while ( socket.is_open() )
+        while ( ! stopped )
           {
-            Message message ( incoming_queue.next() );
-            if ( socket.is_open() )
+            bool aborted;
+            Message message ( m_incoming_queue.next(&aborted) );
+
+            if ( ! aborted )
               dispatcher.dispatch(message, MessageDirection::INCOMING);
           }
         fprintf(stderr, "[0x%x] Exiting dispatch loop.\n", THREAD_ID);
       }
 
-      /** Send outgoing messages until the socket is closed.  */
+      /** Send outgoing messages until the socket is closed.
+       *
+       * @param yield A Boost.Asio `yield_context`, used to enable resuming of this method from
+       *     asynchronous IO-completion handlers.
+       */
       void send_loop(boost::asio::yield_context yield)
       {
+        bool aborted;
+
         fprintf(stderr, "[0x%x] Entered send loop.\n", THREAD_ID);
-        while ( socket.is_open() )
+        while ( ! m_stopped )
           {
             /* Fetch the next message to send, waiting if necessary. */
-            Message message ( outgoing_queue.next() );
+            Message message ( m_outgoing_queue.next(&aborted) );
 
-            if ( ! socket.is_open() )
+            if ( aborted || m_stopped )
               break;
+            else
+              m_halting.clear();
 
             /* Encode it. */
             MemoryEncodeBuffer meb ( message.get_encoded_size() );
@@ -203,35 +247,31 @@ namespace crisp
              * fputs("\n", stderr); */
 
             boost::system::error_code ec;
-            boost::asio::async_write(socket, boost::asio::buffer(meb.data, meb.offset), yield[ec]);
+            boost::asio::async_write(m_socket, boost::asio::buffer(meb.data, meb.offset), yield[ec]);
 
-            if ( ec &&
-                 ec.value() != boost::asio::error::in_progress &&
-                 ec.value() != boost::asio::error::try_again )
-              {                     /*  */
-                fprintf(stderr, "error writing message: %s\n", strerror(ec.value()));
+            if ( ec )
+              {
+                if ( ec.value() != boost::asio::error::in_progress &&
+                     ec.value() != boost::asio::error::try_again &&
+                     ec.value() != boost::asio::error::operation_aborted )
+                  {
+                    fprintf(stderr, "error writing message: %s\n", strerror(ec.value()));
+                  }
                 break;
               }
 
-            if ( socket.is_open() )
+            if ( ! stopped )
               {
                 if ( ! ec  )    /* Dispatch the 'sent' handlers. */
-                  io_service.post(std::bind(&MessageDispatcher<BasicNode>::dispatch, &dispatcher,
+                  m_io_service.post(std::bind(&MessageDispatcher<BasicNode>::dispatch, &dispatcher,
                                             message, MessageDirection::OUTGOING));
                 else            /* Reinsert the message for another go later. */
-                  outgoing_queue.emplace(std::move(message));
+                  m_outgoing_queue.emplace(std::move(message));
               }
-            if ( ! ec )             /* Dispatch the 'sent' handlers. */
-              io_service.post(std::bind(&MessageDispatcher<BasicNode>::dispatch, &dispatcher,
-                                        message, MessageDirection::OUTGOING));
-            else                    /* Reinsert the message for another go later. */
-              outgoing_queue.emplace(std::move(message));
-          
-
           }
         fprintf(stderr, "[0x%x] Exiting send loop.\n", THREAD_ID);
 
-        io_service.post(std::bind(&BasicNode::halt, this));
+        m_io_service.post(std::bind(&BasicNode::halt, this));
       }
 
 
@@ -244,7 +284,7 @@ namespace crisp
 
         boost::system::error_code ec;
         boost::asio::streambuf read_buf;
-        boost::asio::async_read_until(socket, read_buf, sync_string, yield[ec]);
+        boost::asio::async_read_until(m_socket, read_buf, sync_string, yield[ec]);
 
         if ( ec )
           fprintf(stderr, "resync: read_until failed: %s\n", strerror(ec.value()));
@@ -252,7 +292,11 @@ namespace crisp
         return ! static_cast<bool>(ec);
       }
 
-      /** Read incoming messages and insert them into the incoming-message queue. */
+      /** Read incoming messages and insert them into the incoming-message queue.
+       *
+       * @param yield A Boost.Asio `yield_context`, used to enable resuming of this method from
+       *     asynchronous IO-completion handlers.
+       */
       void
       receive_loop(boost::asio::yield_context yield)
       {
@@ -260,19 +304,20 @@ namespace crisp
 
         crisp::util::Buffer rdbuf ( BUFSIZ );
 
-        while ( socket.is_open() )
+        while ( ! stopped )
           {
             Message m;
             boost::system::error_code ec;
 
             /* Read the header. */
-            boost::asio::async_read(socket,
+            boost::asio::async_read(m_socket,
                                     boost::asio::buffer(&m.header, sizeof(m.header)),
                                     boost::asio::transfer_exactly(sizeof(m.header)),
                                     yield[ec]);
             if ( ec )
               {
-                fprintf(stderr, "error reading message header: %s\n", strerror(ec.value()));
+                if ( ec.value() != boost::asio::error::operation_aborted )
+                  fprintf(stderr, "error reading message header: %s\n", strerror(ec.value()));
                 break;
               }
 
@@ -291,14 +336,15 @@ namespace crisp
             if ( mti.has_body )
               {
                 size_t 
-                  n  = boost::asio::async_read(socket,
+                  n  = boost::asio::async_read(m_socket,
                                                boost::asio::buffer(rdbuf.data + sizeof(m.header),
                                                                    m.header.length),
                                                boost::asio::transfer_exactly(m.header.length),
                                                yield[ec]);
                 if ( ec )
                   {
-                    fprintf(stderr, "error reading message body: %s\n", strerror(ec.value()));
+                    if ( ec.value() != boost::asio::error::operation_aborted )
+                      fprintf(stderr, "error reading message body: %s\n", strerror(ec.value()));
                     break;
                   }
                 else
@@ -321,11 +367,11 @@ namespace crisp
                   break;
               }
             else
-              incoming_queue.emplace(std::move(m));
+              m_incoming_queue.emplace(std::move(m));
           }
         fprintf(stderr, "[0x%x] Exiting receive loop.\n", THREAD_ID);
 
-        io_service.post(std::bind(&BasicNode::halt, this));
+        m_io_service.post(std::bind(&BasicNode::halt, this));
       }
     };
   }
