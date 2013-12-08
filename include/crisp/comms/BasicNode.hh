@@ -132,6 +132,12 @@ namespace crisp
         send(Handshake { PROTOCOL_VERSION, role });
       }
 
+      ~BasicNode()
+      {
+        if ( ! stopped )
+          halt();
+      }
+
 
       /** Launch worker threads to handle the node's IO. */
       void launch()
@@ -177,6 +183,7 @@ namespace crisp
             fprintf(stderr, "done.\n");
           }
       }
+
       /** Enqueue an outgoing message.  The message will be sent once all previously-queued outgoing
        * messages have been sent.
        *
