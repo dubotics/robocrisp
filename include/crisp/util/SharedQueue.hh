@@ -32,14 +32,18 @@ namespace crisp
       /** Condition variable to be used for "next available item" notification. */
       std::condition_variable m_cv;
 
+      /** Flag set to indicate that a wait-for-next was aborted. */
+      std::atomic<bool> m_aborted;
+
     public:
       /** Passthrough constructor for the underlying `std::queue`. */
       template < typename... Args >
       inline
       SharedQueue(Args... args)
-	: BaseType(args...),
-	  m_mutex ( ),
-	  m_cv ( )
+        : BaseType(args...),
+          m_mutex ( ),
+          m_cv ( ),
+          m_aborted ( false )
       {}
 
       SharedQueue(SharedQueue&& sq)
@@ -54,6 +58,9 @@ namespace crisp
       inline void
       wake_all()
       {
+        std::unique_lock<Mutex> lock ( m_mutex );
+
+        m_aborted = true;
         m_cv.notify_all();
       }
 
@@ -103,25 +110,34 @@ namespace crisp
       { std::unique_lock<Mutex> lock ( m_mutex );
 	BaseType::pop(); }
     
+
       /** Fetch the next available entry.  If the queue is currently empty, this method will block
        *  the current thread until another thread enqueues an object.
        *
        * @return The next item on the queue.
        */
       inline _Tp
-      next()
+      next(bool* aborted = nullptr)
       {
 	_Tp out;
 
-	{
-	  std::unique_lock<Mutex> lock ( m_mutex );
+        if ( m_aborted && aborted )
+          *aborted = true;
+        else
+          {
+            std::unique_lock<Mutex> lock ( m_mutex );
 
-	  while ( empty() )
-	    m_cv.wait(lock);
+            while ( empty() && ! m_aborted )
+              m_cv.wait(lock);
 
-	  out = std::move(front());
-	  BaseType::pop();
-	}
+            if ( ! m_aborted )
+              {
+                out = std::move(front());
+                BaseType::pop();
+              }
+            else if ( aborted )
+              *aborted = true;
+          }
 
 	return out;
       }
