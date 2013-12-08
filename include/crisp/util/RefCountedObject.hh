@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include <cstdint>
 #include <cstdlib>
+#include <atomic>
 
 namespace crisp
 {
@@ -42,7 +43,7 @@ namespace crisp
        */
       virtual ~RefCountedObject() throw ( std::runtime_error );
 
-      ssize_t refCount;
+      std::atomic<ssize_t> refCount;
     };
   }
 }
@@ -67,9 +68,7 @@ intrusive_ptr_add_ref(crisp::util::RefCountedObject* __rco)
 inline void
 intrusive_ptr_release(crisp::util::RefCountedObject* __rco)
 {
-  __rco->refCount--;
-
-  if ( __rco->refCount == 0 )
+  if ( !  --(__rco->refCount) )
     delete __rco;
 }
 
