@@ -61,12 +61,17 @@ namespace crisp
     DataDeclarationBase<>::float_type_name(uint8_t width)
     {
       switch ( width )
-	{
-	case sizeof(float): return "float";
-	case sizeof(double): return "double";
-	case sizeof(long double): return "long double";
-	default: return NULL;
-	}
+        {
+        case sizeof(float): return "float";
+        case sizeof(double): return "double";
+
+          /* ARM processors have a "long double" that's the same size as "double"; we need to
+           * handle that so the compiler doesn't error out with "duplicate case" errors. */
+#ifndef __arm__
+        case sizeof(long double): return "long double";
+#endif
+        default: return NULL;
+        }
     }
 
     template <>
