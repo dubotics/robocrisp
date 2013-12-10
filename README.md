@@ -40,6 +40,21 @@ RoboCRISP does **not** provide:
 	the glue required for low-level hardware control is outside its scope.
 
 
+## Compiling
+
+To compile RoboCRISP, you'll need CMake, the "cross-platform Makefile generator" installed.  We
+strongly recommend using a separate build directory for compiling, since it keeps the build
+files contained.
+
+On GNU/Linux machines, the following commands will generate the build files and build defined
+targets. (Be sure to replace `/path/to/robocrisp` with the directory in which you found _this_
+file!)
+
+    cd /path/to/robocrisp
+    mkdir build && cd build
+    cmake .. && make
+
+
 ## Documentation
 
 Documentation is [or will be, if it's the last thing I do...] provided in Markdown format inside
