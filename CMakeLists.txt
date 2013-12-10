@@ -12,7 +12,16 @@ find_package(Boost 1.54.0 REQUIRED COMPONENTS
   )
 
 if(NOT Boost_FOUND)
-  message(FATAL_ERROR "The Boost libraries were not found.  Please install Boost v1.54 or later.")
+  message(FATAL_ERROR
+
+    "The Boost libraries and/or their development files were not found.  Please"
+    " install Boost v1.54 or later.\n"
+
+    "On Debian and Debian-based GNU/Linux systems (including Ubuntu and "
+    "derivatives), installing `libboost-coroutine-dev` should pull in the "
+    "necessary Boost dependencies."
+
+    )
 endif(NOT Boost_FOUND)
 
 include_directories(${Boost_INCLUDE_DIRS})
@@ -48,3 +57,9 @@ endif("${CMAKE_CXX_COMPILER}" MATCHES "clang\\+\\+")
 include_directories("${RoboCRISP_SOURCE_DIR}/include")
 add_subdirectory(src)
 add_subdirectory(tests)
+
+
+export(
+  TARGETS crisp-util crisp-input crisp-comms
+  FILE "${${CMAKE_PROJECT_NAME}_BINARY_DIR}/${CMAKE_PROJECT_NAME}.cmake"
+  )
