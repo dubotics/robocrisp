@@ -7,6 +7,10 @@ add_library(crisp-util STATIC
   util/PeriodicScheduleSlot.cc
   )
 
+target_link_libraries(crisp-util
+  ${Boost_SYSTEM_LIBRARY_RELEASE}
+  )
+
 add_library(crisp-comms STATIC
   comms/Buffer.cc
   comms/Configuration.cc
@@ -19,9 +23,14 @@ add_library(crisp-comms STATIC
   comms/ModuleInput.cc
   comms/Sensor.cc
   )
-target_link_libraries(crisp-comms ${Boost_SYSTEM_LIBRARY_RELEASE} pthread)
+target_link_libraries(crisp-comms
+  ${Boost_COROUTINE_LIBRARY_RELEASE}
+  ${Boost_CONTEXT_LIBRARY_RELEASE}
+  ${Boost_SYSTEM_LIBRARY_RELEASE}
+  pthread
+  )
 
-if(UNIX)
+if(UNIX AND NOT APPLE)
   # Assume Linux, since CMake doesn't provide a Linux-specific variable...
   list(APPEND INPUT_PLATFORM_SOURCES
     input/EvDevController.cc
@@ -29,7 +38,7 @@ if(UNIX)
 elseif(WIN32)
   list(APPEND INPUT_PLATFORM_SOURCES
     ) # No Windows-specific source files for now...
-endif(UNIX)
+endif(UNIX AND NOT APPLE)
 
 add_library(crisp-input STATIC
   input/Axis.cc
