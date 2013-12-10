@@ -73,6 +73,21 @@ namespace crisp
       }
     }
 
+
+    template < typename _Node >
+    MessageDispatcher<_Node>::MessageDispatcher()
+      : m_node ( nullptr ),
+        handshake ( ),
+        handshake_response ( ),
+        sync ( ),
+        configuration_query ( ),
+        configuration_response ( ),
+        module_control ( )
+    {
+      set_default_callbacks();
+    }
+
+
     template < typename _Node >
     MessageDispatcher<_Node>::MessageDispatcher(_Node& node)
     : m_node ( &node ),
@@ -91,6 +106,12 @@ namespace crisp
     MessageDispatcher<_Node>::~MessageDispatcher()
     {}
 
+    template < typename _Node >
+    void
+    MessageDispatcher<_Node>::set_target(_Node& node)
+    {
+      m_node = &node;
+    }
 
     template < typename _Node >
     void
@@ -161,6 +182,12 @@ namespace crisp
                   hs.role == NodeRole::MASTER ? "MASTER" : "SLAVE");
         };
 
+
+      configuration_query.received =
+        [&](_Node& _node)
+        { _node.send(_node.configuration); };
+
+
       module_control.sent =
         [&](_Node&, const ModuleControl&)
         {
@@ -187,6 +214,7 @@ namespace crisp
     void
     MessageDispatcher<_Node>::dispatch(const Message& message, MessageDirection direction) throw ( std::runtime_error )
     {
+      assert(m_node != NULL);
       switch ( message.header.type )
 	{
 	case MessageType::HANDSHAKE:

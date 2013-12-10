@@ -8,13 +8,19 @@
 #include <unordered_set>
 #include <boost/asio/io_service.hpp>
 #include <thread>
+#include <crisp/comms/Configuration.hh>
+#include <crisp/comms/MessageDispatcher.hh>
 
 namespace crisp
 {
   namespace comms
   {
-    /** Listens for incoming connections on a specific endpoint, and manages
-        connected nodes. */
+    /** Listens for incoming connections on a specific endpoint, and manages connected nodes.
+     *
+     *  For configuration of the local end of each connection, NodeServer contains a
+     *  Configuration object `configuration` and a MessageDispatcher object `dispatcher`, which
+     *  are copied to each node created for a connection.
+     */
     template < typename _Node >
     struct NodeServer
     {
@@ -32,9 +38,11 @@ namespace crisp
       /** Connected nodes. */
       NodeSet nodes;
 
-      /** Configuration to be sent to remote nodes in response to CONFIGURATION_QUERY-type
-          messages. */
+      /** Configuration to be installed on created (nodes). */
       Configuration configuration;
+
+      /** MessageDispatcher to be copied to created (nodes). */
+      MessageDispatcher<_Node> dispatcher;
 
       /** Handle to the thread in which `run` is running when call indirectly via `launch`. */
       std::thread run_thread;
@@ -46,6 +54,7 @@ namespace crisp
           acceptor ( io_service, listen_endpoint ),
           nodes ( ),
           configuration ( ),
+          dispatcher ( ),
           run_thread ( )
       {}
 
@@ -118,13 +127,9 @@ namespace crisp
                  * connection and add it to our set of connected nodes. */
                 Node* node ( new Node(std::move(socket), NodeRole::SLAVE) );
 
-                node->configuration = configuration; /* copy the configuration */
-                assert(node->configuration == configuration);
-
-                /* Set up callbacks on the node. */
-                node->dispatcher.configuration_query.received =
-                  [&](Node& _node) { _node.send(_node.configuration); };
-
+                node->configuration = configuration;
+                node->dispatcher = dispatcher;
+                node->dispatcher.set_target(*node);
 
                 /* Launch the node's worker threads. */
                 node->launch();

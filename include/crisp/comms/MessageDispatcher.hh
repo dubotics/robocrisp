@@ -24,6 +24,11 @@ namespace crisp
     {
     public:
 
+      /** Default constructor.  When constructed in this way, `set_target` must be called to
+       * specify the node object to be passed to message callbacks before `dispatch` is used.
+       */
+      MessageDispatcher();
+
       /** Initialize the dispatcher to handle callbacks for the given node.
        *
        * @param node Node for which the dispatcher will be handling event callbacks.
@@ -34,6 +39,13 @@ namespace crisp
        */
       virtual ~MessageDispatcher();
 
+
+      /** Set node for which this dispatcher manages callbacks.
+       *
+       * @param node Reference to the target node.
+       */
+      void
+      set_target(_Node& node);
 
       /** Set certain message handlers to generic callbacks.  This method is called by the
        * MessageDispatcher constructor, and may be used later to return the node to default
@@ -49,6 +61,11 @@ namespace crisp
        *   ensure that the local and connected nodes agree on each others' roles, as well as
        *   produce informational (debug) output on `stderr`.  If a handshake fails for any
        *   reason, the `handshake_response.received` handler function will halt the local node.
+       *   On successful completion of the handshake sequence, the default `handshake_response`
+       *   receive handler will schedule a SYNC message send at 1 Hz.
+       *
+       * - Receive handler in `configuration_query`: responds by sending a configuration
+           response containing the node's installed interface configuration.
        *
        * - Send and receive handlers in `module_control`: informational output only.  You will
        *   almost certainly want to override the `received` handler function for nodes operating
