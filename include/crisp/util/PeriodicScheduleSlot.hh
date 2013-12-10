@@ -49,9 +49,6 @@ namespace crisp
       /** Actions assigned to this slot. */
       ActionList m_actions;
 
-      /** Thread in which user actions are invoked. */
-      std::thread m_action_thread;
-
       /** Callback used to handle timer events.  */
       void
       timer_expiry_handler(const boost::system::error_code& ec);

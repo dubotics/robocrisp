@@ -11,16 +11,14 @@ namespace crisp
       : m_scheduler ( scheduler ),
         m_timer ( new Timer(m_scheduler.get_io_service()) ),
         m_interval ( interval ),
-        m_actions ( ),
-        m_action_thread ( )
+        m_actions ( )
     {}
 
     PeriodicScheduleSlot::PeriodicScheduleSlot(PeriodicScheduleSlot&& slot)
       : m_scheduler ( slot.m_scheduler ),
         m_timer ( std::move(slot.m_timer) ),
         m_interval ( std::move(slot.m_interval) ),
-        m_actions ( std::move(slot.m_actions) ),
-        m_action_thread ( std::move(slot.m_action_thread) )
+        m_actions ( std::move(slot.m_actions) )
     {
       slot.m_timer = nullptr;
     }
