@@ -6,6 +6,7 @@ add_library(crisp-util STATIC
   util/PeriodicAction.cc
   util/Scheduler.cc
   util/PeriodicScheduleSlot.cc
+  util/WorkerObject.cc
   )
 
 target_link_libraries(crisp-util
