@@ -59,7 +59,11 @@ add_subdirectory(src)
 add_subdirectory(tests)
 
 
+# Export to the user package registry.
 export(
   TARGETS crisp-util crisp-input crisp-comms
-  FILE "${${CMAKE_PROJECT_NAME}_BINARY_DIR}/${CMAKE_PROJECT_NAME}.cmake"
+  FILE "${${CMAKE_PROJECT_NAME}_BINARY_DIR}/${CMAKE_PROJECT_NAME}Targets.cmake"
   )
+file(COPY "${RoboCRISP_SOURCE_DIR}/cmake/RoboCRISPConfig.cmake"
+  DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+export(PACKAGE "${CMAKE_PROJECT_NAME}")

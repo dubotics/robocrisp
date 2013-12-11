@@ -11,6 +11,7 @@ add_library(crisp-util STATIC
 
 target_link_libraries(crisp-util
   ${Boost_SYSTEM_LIBRARY_RELEASE}
+  pthread
   )
 
 add_library(crisp-comms STATIC
@@ -26,10 +27,10 @@ add_library(crisp-comms STATIC
   comms/Sensor.cc
   )
 target_link_libraries(crisp-comms
+  crisp-util
   ${Boost_COROUTINE_LIBRARY_RELEASE}
   ${Boost_CONTEXT_LIBRARY_RELEASE}
   ${Boost_SYSTEM_LIBRARY_RELEASE}
-  pthread
   )
 
 if(UNIX AND NOT APPLE)
