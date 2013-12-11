@@ -4,7 +4,7 @@ add_library(crisp-util STATIC
   util/RefCountedObject.cc
   util/ScheduledAction.cc
   util/PeriodicAction.cc
-  util/PeriodicScheduler.cc
+  util/Scheduler.cc
   util/PeriodicScheduleSlot.cc
   )
 

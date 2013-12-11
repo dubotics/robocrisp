@@ -1,4 +1,4 @@
-#include <crisp/util/PeriodicScheduler.hh>
+#include <crisp/util/Scheduler.hh>
 #include <cstdio>
 
 int
@@ -6,12 +6,12 @@ main(int argc, char* argv[])
 {
  /* This gives us the user-defined-literal suffix `_Hz`, which takes a value in
     Hz and transforms it into the interval we need to pass to
-    `PeriodicScheduler::schedule`. */
+    `Scheduler::schedule`. */
   using namespace crisp::util::literals;
 
   /* Instantiate an IO-coordinator object and a scheduler. */
   boost::asio::io_service service;
-  crisp::util::PeriodicScheduler scheduler ( service );
+  crisp::util::Scheduler scheduler ( service );
 
 
   /* Schedule some functions to run every so often. */

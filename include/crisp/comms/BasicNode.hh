@@ -13,7 +13,7 @@
 #include <crisp/comms/MessageDispatcher.hh>
 #include <crisp/comms/common.hh>
 
-#include <crisp/util/PeriodicScheduler.hh>
+#include <crisp/util/Scheduler.hh>
 #include <crisp/util/SharedQueue.hh>
 #include <crisp/util/Buffer.hh>
 
@@ -76,7 +76,7 @@ namespace crisp
 
       /** A scheduler for managing periodic communication (and any user-set actions) on the node.
           Within BasicNode, this is used for producing synchronization messages.  */
-      crisp::util::PeriodicScheduler scheduler;
+      crisp::util::Scheduler scheduler;
 
       /** Node role specified at object construction. */
       const NodeRole role;

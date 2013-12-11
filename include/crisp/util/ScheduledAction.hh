@@ -9,7 +9,7 @@ namespace crisp
   namespace util
   {
     /* forward declaration */
-    class PeriodicScheduler;
+    class Scheduler;
 
     /** Represents an action (function call) scheduled for one-time activation.
      *  ScheduledAction provides a simplified interface for canceling and/or
@@ -26,12 +26,12 @@ namespace crisp
       typedef std::function<void(ScheduledAction&)> Function;
 
     private:
-      friend class PeriodicScheduler;
+      friend class Scheduler;
       friend class std::hash<ScheduledAction>;
 
-      ScheduledAction(PeriodicScheduler& scheduler, Function function);
+      ScheduledAction(Scheduler& scheduler, Function function);
 
-      PeriodicScheduler& m_scheduler;
+      Scheduler& m_scheduler;
       Timer* m_timer;
       Function m_function;
 

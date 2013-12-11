@@ -1,20 +1,20 @@
-#include <crisp/util/PeriodicScheduler.hh>
+#include <crisp/util/Scheduler.hh>
 #include <cassert>
 namespace crisp
 {
   namespace util
   {
 
-    PeriodicScheduler::PeriodicScheduler(boost::asio::io_service& io_service)
+    Scheduler::Scheduler(boost::asio::io_service& io_service)
       : m_io_service ( io_service ),
         m_slots ( )
     {}
 
-    PeriodicScheduler::~PeriodicScheduler()
+    Scheduler::~Scheduler()
     {}
 
     ScheduledAction&
-    PeriodicScheduler::set_timer(ScheduledAction::Duration duration, ScheduledAction::Function function)
+    Scheduler::set_timer(ScheduledAction::Duration duration, ScheduledAction::Function function)
     {
       ScheduledAction action ( *this, function );
       action.reset(duration);
@@ -25,7 +25,7 @@ namespace crisp
     }
 
     PeriodicAction&
-    PeriodicScheduler::schedule(PeriodicScheduleSlot::Duration interval,
+    Scheduler::schedule(PeriodicScheduleSlot::Duration interval,
                                 PeriodicAction::Function function)
     {
       SlotMap::iterator iter ( m_slots.find(interval) );
@@ -54,13 +54,13 @@ namespace crisp
     }
 
     void
-    PeriodicScheduler::remove(const ScheduledAction& action)
+    Scheduler::remove(const ScheduledAction& action)
     {
       m_actions.erase(action);
     }
 
     boost::asio::io_service&
-    PeriodicScheduler::get_io_service()
+    Scheduler::get_io_service()
     {
       return m_io_service;
     }

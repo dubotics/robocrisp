@@ -11,7 +11,7 @@ namespace crisp
   namespace util
   {
     /* forward declaration */
-    class PeriodicScheduler;
+    class Scheduler;
 
     /** Producer of a regularly-occurring signal.  A slot sets up a timer, and
      * when that timer expires launches a thread to invoke all actions
@@ -38,7 +38,7 @@ namespace crisp
       typedef std::forward_list<PeriodicAction> ActionList;
 
       /** Scheduler that owns this slot. */
-      PeriodicScheduler& m_scheduler;
+      Scheduler& m_scheduler;
 
       /** The slot's timer. */
       Timer* m_timer;
@@ -63,7 +63,7 @@ namespace crisp
        *
        * @param interval Interval at which the slot should activate.
        */
-      PeriodicScheduleSlot(PeriodicScheduler& scheduler, Duration interval);
+      PeriodicScheduleSlot(Scheduler& scheduler, Duration interval);
 
       /** Move constructor.
        *

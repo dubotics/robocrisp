@@ -2,7 +2,7 @@
 #include <crisp/comms/Handshake.hh>
 #include <crisp/comms/Configuration.hh>
 #include <crisp/comms/ModuleControl.hh>
-#include <crisp/util/PeriodicScheduler.hh>
+#include <crisp/util/Scheduler.hh>
 
 namespace crisp
 {

@@ -16,7 +16,7 @@ add_executable(controller-test controller-test.cc)
 target_link_libraries(controller-test crisp-input pthread)
 
 
-# PeriodicScheduler test
+# Scheduler test
 add_executable(periodic-test periodic-test.cc)
 target_link_libraries(periodic-test crisp-util boost_system)
 

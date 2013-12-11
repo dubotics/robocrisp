@@ -1,12 +1,12 @@
 #include <crisp/util/PeriodicScheduleSlot.hh>
-#include <crisp/util/PeriodicScheduler.hh>
+#include <crisp/util/Scheduler.hh>
 
 namespace crisp
 {
   namespace util
   {
 
-    PeriodicScheduleSlot::PeriodicScheduleSlot(PeriodicScheduler& scheduler,
+    PeriodicScheduleSlot::PeriodicScheduleSlot(Scheduler& scheduler,
                                                PeriodicScheduleSlot::Duration interval)
       : m_scheduler ( scheduler ),
         m_timer ( new Timer(m_scheduler.get_io_service()) ),

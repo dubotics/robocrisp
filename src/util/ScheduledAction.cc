@@ -8,13 +8,13 @@
  * lives in the first header file included directly below this comment.
  */
 #include <crisp/util/ScheduledAction.hh>
-#include <crisp/util/PeriodicScheduler.hh>
+#include <crisp/util/Scheduler.hh>
 
 namespace crisp
 {
   namespace util
   {
-    ScheduledAction::ScheduledAction(PeriodicScheduler& scheduler, Function function)
+    ScheduledAction::ScheduledAction(Scheduler& scheduler, Function function)
       : m_scheduler ( scheduler ),
         m_timer ( new Timer(scheduler.get_io_service()) ),
         m_function ( function )

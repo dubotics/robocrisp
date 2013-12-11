@@ -1,5 +1,5 @@
-#ifndef crisp_util_PeriodicScheduler_hh
-#define crisp_util_PeriodicScheduler_hh 1
+#ifndef crisp_util_Scheduler_hh
+#define crisp_util_Scheduler_hh 1
 
 #include <chrono>
 #include <unordered_map>
@@ -10,7 +10,7 @@
 #include <crisp/util/PeriodicScheduleSlot.hh>
 
 
-/* Need to define several std::hash<...> implementations for PeriodicScheduler,
+/* Need to define several std::hash<...> implementations for Scheduler,
    which uses std::unordered_map and std::unordered_set keyed on these types. */
 namespace std
 {
@@ -55,21 +55,21 @@ namespace crisp
     }
 
     /** Runs user-defined functions at regular intervals or after specified timeouts.
-     * PeriodicScheduler manages scheduled actions such that a function's execution time does
+     * Scheduler manages scheduled actions such that a function's execution time does
      * not affect the scheduler's timing.
      */
-    class PeriodicScheduler
+    class Scheduler
     {
     public:
       typedef PeriodicScheduleSlot Slot;
 
-      /** Construct a PeriodicScheduler that uses the given `io_service`.
+      /** Construct a Scheduler that uses the given `io_service`.
        *
        * @param io_service Boost.Asio `io_service` to use.
        */
-      PeriodicScheduler(boost::asio::io_service& io_service);
+      Scheduler(boost::asio::io_service& io_service);
 
-      virtual ~PeriodicScheduler();      /**< Destructor. */
+      virtual ~Scheduler();      /**< Destructor. */
 
 
       /** Schedule a function to be called after a specified duration.
@@ -130,4 +130,4 @@ namespace crisp
   }
 }
 
-#endif	/* crisp_util_PeriodicScheduler_hh */
+#endif	/* crisp_util_Scheduler_hh */
