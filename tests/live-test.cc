@@ -119,6 +119,12 @@ main(int argc, char* argv[])
         .add_input<float>({ "joint0", { _minimum = -M_PI_2, _maximum = M_PI_2 }})
         .add_input<float>({ "joint1", { _minimum = -M_PI_2, _maximum = M_PI_2 }});
 
+      boost::asio::signal_set ss ( service, SIGINT );
+      ss.async_wait([&](const boost::system::error_code& error, int sig)
+                    {
+                      if ( ! error )
+                        server.halt();
+                    });
       server.run();
     }
   else
@@ -155,7 +161,6 @@ main(int argc, char* argv[])
                 }
 	    };
 
-          node.launch();
           node.send(MessageType::CONFIGURATION_QUERY);
 
           boost::asio::signal_set ss ( service, SIGINT );
@@ -166,8 +171,7 @@ main(int argc, char* argv[])
                               node.halt();
                             }
                         });
-          while ( ! node.stopped )
-            service.run_one();
+          node.run();
 	}
     }
 

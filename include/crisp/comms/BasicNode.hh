@@ -14,6 +14,7 @@
 #include <crisp/comms/common.hh>
 
 #include <crisp/util/Scheduler.hh>
+#include <crisp/util/WorkerObject.hh>
 #include <crisp/util/SharedQueue.hh>
 #include <crisp/util/Buffer.hh>
 
@@ -35,16 +36,13 @@ namespace crisp
     /** Basic Message node for use with Boost.Asio and IP-based protocols.
      */
     template < typename _Protocol >
-    class BasicNode
+    class BasicNode : protected crisp::util::WorkerObject
     {
     public:
       typedef _Protocol Protocol;
       typedef typename Protocol::socket Socket;
 
     private:
-      /** Reference to the IO service used by the node's components. */
-      boost::asio::io_service& m_io_service;
-
       /** Connected socket used for communication. */
       Socket m_socket;
 
@@ -62,13 +60,10 @@ namespace crisp
           determine whether or not the node has been shut down. */
       std::atomic<bool> m_stopped;
 
-      /** Handles for the worker threads used to handle the node's I/O handlers.
-       *
-       * *Three* is the minimum number of threads allowable here: the send and dispatch loops each
-       * block when waiting for new outgoing and incoming messages, respectively, so we need at
-       * least one other thread available to execute asynchronous event handlers.
-       */
-      std::thread m_run_threads[3];
+      std::thread m_dispatch_thread;
+
+      std::mutex m_halt_mutex;
+      std::condition_variable m_halt_cv;
 
     public:
       /** Public "node-is-halting-or-stopped" flag. */
@@ -104,14 +99,16 @@ namespace crisp
        *     node.
        */
       BasicNode(Socket&& _socket, NodeRole _role)
-        : m_io_service ( _socket.get_io_service() ),
+        : WorkerObject ( _socket.get_io_service(), 2 ),
           m_socket ( std::move(_socket) ),
           m_sync_action ( nullptr ),
           m_outgoing_queue ( ),
           m_incoming_queue ( ),
           m_halting ( ),
           m_stopped ( false ),
-          m_run_threads ( ),
+          m_dispatch_thread ( ),
+          m_halt_mutex ( ),
+          m_halt_cv ( ),
           stopped ( m_stopped ),
           scheduler ( m_io_service ),
           role ( _role ),
@@ -120,47 +117,64 @@ namespace crisp
       {
         m_halting.clear();
 
-        boost::asio::spawn(m_io_service, std::bind(&BasicNode::send_loop,
-                                                 this, std::placeholders::_1));
+        m_dispatch_thread = std::thread(std::bind(&BasicNode::dispatch_received_loop, this));
+
         boost::asio::spawn(m_io_service, std::bind(&BasicNode::receive_loop, this,
-                                                 std::placeholders::_1));
+                                                   std::placeholders::_1));
+        boost::asio::spawn(m_io_service, std::bind(&BasicNode::send_loop, this,
+                                                   std::placeholders::_1));
 
         send(Handshake { PROTOCOL_VERSION, role });
       }
 
       ~BasicNode()
       {
+        halt(true);
+      }
+
+
+      void run()
+      {
+        std::unique_lock<std::mutex> lock ( m_halt_mutex );
+        launch();
+        m_halt_cv.wait(lock);
         if ( ! stopped )
           halt();
       }
 
-
       /** Launch worker threads to handle the node's IO. */
-      void launch()
+      using WorkerObject::launch;
+
+
+      bool
+      can_halt() const
       {
-        m_run_threads[0] = std::thread(std::bind(&BasicNode::dispatch_received_loop, this));
-        for ( std::thread& thread : m_run_threads )
-          if ( ! thread.joinable() ) /* skip initialized handles (e.g. dispatch thread...) */
-            thread = std::thread ( std::bind(BasicNode::worker_main,
-                                             std::ref(m_io_service),
-                                             std::cref(m_stopped)) );
+        return WorkerObject::can_halt() && std::this_thread::get_id() != m_dispatch_thread.get_id();
       }
 
-      static void
-      worker_main(boost::asio::io_service& io_service,
-                  const std::atomic<bool>& stopping)
-      {
-        while ( ! stopping )
-          io_service.run_one();
-      }
-
-
-      /** Halt the node by closing the socket and waiting for its worker threads to finish.  */
-      void halt()
+      /** Halt the node by closing the socket and waiting for its worker threads to finish.
+       *
+       * @param force_try Force an attempt to halt even if it looks like the function was called
+       *   from the wrong thread.
+       *
+       * @return `true` if the node was able to halt, and `false` if the function was called
+       *     from the wrong thread or the node was already halted.
+       */
+      bool
+      halt(bool force_try = false)
       {
         if ( ! m_halting.test_and_set() )
           {
             m_stopped = true;
+
+            if ( ! can_halt() && ! force_try )
+              {               /* Can't halt from this thread. */
+                m_stopped = false;
+                m_halting.clear();
+                m_halt_cv.notify_all();
+                return false;
+              }
+
             fprintf(stderr, "[0x%x] Halting... ", THREAD_ID);
 
             if ( m_sync_action )
@@ -173,11 +187,15 @@ namespace crisp
 
             m_io_service.poll();
 
-            for ( std::thread& thread : m_run_threads )
-              if ( thread.joinable() && thread.get_id() != std::this_thread::get_id() )
-                thread.join();
+            WorkerObject::halt();
+            m_dispatch_thread.join();
+
             fprintf(stderr, "done.\n");
+            m_halt_cv.notify_all();
+            return true;
           }
+        else
+          return false;
       }
 
       /** Enqueue an outgoing message.  The message will be sent once all previously-queued outgoing
@@ -206,6 +224,7 @@ namespace crisp
       void
       dispatch_received_loop()
       {
+        fprintf(stderr, "[0x%x] Entered dispatch loop.\n", THREAD_ID);
         while ( ! stopped )
           {
             bool aborted;
@@ -274,7 +293,7 @@ namespace crisp
           }
         fprintf(stderr, "[0x%x] Exiting send loop.\n", THREAD_ID);
 
-        m_io_service.post(std::bind(&BasicNode::halt, this));
+        m_io_service.post(std::bind(&BasicNode::halt, this, false));
       }
 
 
@@ -374,7 +393,7 @@ namespace crisp
           }
         fprintf(stderr, "[0x%x] Exiting receive loop.\n", THREAD_ID);
 
-        m_io_service.post(std::bind(&BasicNode::halt, this));
+        m_io_service.post(std::bind(&BasicNode::halt, this, false));
       }
     };
   }
