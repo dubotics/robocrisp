@@ -58,8 +58,10 @@ namespace crisp
       /** Unpause an action previously paused with `pause`. */
       void unpause();
 
-      /** Cancel the action, removing it from its slot.  The action object is
-       * destructed and should not be used after the call to this function.
+      /** Cancel the action, removing it from its slot.
+       *
+       * @post The PeriodicAction object is destroyed by the slot that owns it, and the
+       *     reference used to access it is no longer valid.
        */
       void cancel();
     };
