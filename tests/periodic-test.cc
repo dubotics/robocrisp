@@ -1,4 +1,5 @@
 #include <crisp/util/Scheduler.hh>
+#include <boost/asio/signal_set.hpp>
 #include <cstdio>
 
 int
@@ -28,6 +29,12 @@ main(int argc, char* argv[])
                       {
                         fprintf(stdout, "500 ms has elapsed.\n");
                       });
+
+  boost::asio::signal_set sigset ( service, SIGINT );
+  sigset.async_wait([&](const boost::system::error_code& ec, int signum)
+                    {
+                      service.stop();
+                    });
 
   /* The timers used by the scheduler won't execute unless there's a thread
      calling the io_service's `run` method, which parcels out work that results
