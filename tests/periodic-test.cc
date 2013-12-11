@@ -19,8 +19,15 @@ main(int argc, char* argv[])
                      { fprintf(stdout, "1\n"); });
   scheduler.schedule(5_Hz, [&](crisp::util::PeriodicAction&)
                      { fprintf(stdout, "5\n"); });
+
   scheduler.schedule(10_Hz, [&](crisp::util::PeriodicAction&)
                      { fprintf(stdout, "10\n"); });
+
+  scheduler.set_timer(std::chrono::milliseconds(500),
+                      [&](crisp::util::ScheduledAction& action)
+                      {
+                        fprintf(stdout, "500 ms has elapsed.\n");
+                      });
 
   /* The timers used by the scheduler won't execute unless there's a thread
      calling the io_service's `run` method, which parcels out work that results

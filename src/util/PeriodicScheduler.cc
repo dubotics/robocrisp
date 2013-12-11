@@ -13,9 +13,20 @@ namespace crisp
     PeriodicScheduler::~PeriodicScheduler()
     {}
 
-    PeriodicScheduler::Action&
-    PeriodicScheduler::schedule(PeriodicScheduler::Duration interval,
-                                PeriodicScheduler::Action::Function function)
+    ScheduledAction&
+    PeriodicScheduler::set_timer(ScheduledAction::Duration duration, ScheduledAction::Function function)
+    {
+      ScheduledAction action ( *this, function );
+      action.reset(duration);
+      std::pair<ActionSet::iterator,bool>
+        action_pair ( m_actions.insert(std::move(action)) );
+      assert(action_pair.second);
+      return const_cast<ScheduledAction&>(*(action_pair.first));
+    }
+
+    PeriodicAction&
+    PeriodicScheduler::schedule(PeriodicScheduleSlot::Duration interval,
+                                PeriodicAction::Function function)
     {
       SlotMap::iterator iter ( m_slots.find(interval) );
       Slot* slot ( NULL );
@@ -36,12 +47,17 @@ namespace crisp
       assert(slot != NULL);
 
       /* Add the action to the slot. */
-      Action& out ( slot->emplace(function) );
+      PeriodicAction& out ( slot->emplace(function) );
       assert(! slot->empty() );
 
       return out;
     }
 
+    void
+    PeriodicScheduler::remove(const ScheduledAction& action)
+    {
+      m_actions.erase(action);
+    }
 
     boost::asio::io_service&
     PeriodicScheduler::get_io_service()
