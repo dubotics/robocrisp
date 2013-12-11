@@ -1,3 +1,5 @@
+################################################################
+# Utility library
 add_library(crisp-util STATIC
   util/checksum.cc
   util/Buffer.cc
@@ -14,6 +16,8 @@ target_link_libraries(crisp-util
   pthread
   )
 
+################################################################
+# Comms library
 add_library(crisp-comms STATIC
   comms/Buffer.cc
   comms/Configuration.cc
@@ -33,6 +37,8 @@ target_link_libraries(crisp-comms
   ${Boost_SYSTEM_LIBRARY_RELEASE}
   )
 
+################################################################
+# Input library
 if(UNIX AND NOT APPLE)
   # Assume Linux, since CMake doesn't provide a Linux-specific variable...
   list(APPEND INPUT_PLATFORM_SOURCES
