@@ -43,11 +43,18 @@ namespace crisp
       typedef typename Protocol::socket Socket;
 
     private:
+      friend class MessageDispatcher<BasicNode>;
       /** Connected socket used for communication. */
       Socket m_socket;
 
       /** Handle to the scheduled period-action used for synchronization.  */
       crisp::util::PeriodicAction* m_sync_action;
+
+      /** Handle to the scheduled "halt" action, used to disconnect the node if
+       *  a handshake isn't completed within five seconds of the node being
+       *  launched.
+       */
+      crisp::util::ScheduledAction* m_halt_action;
 
       crisp::util::SharedQueue<Message>
         m_outgoing_queue,         /**< Outgoing message queue. */
@@ -99,9 +106,10 @@ namespace crisp
        *     node.
        */
       BasicNode(Socket&& _socket, NodeRole _role)
-        : WorkerObject ( _socket.get_io_service(), 2 ),
+        : WorkerObject ( _socket.get_io_service(), 5 ),
           m_socket ( std::move(_socket) ),
           m_sync_action ( nullptr ),
+          m_halt_action ( nullptr ),
           m_outgoing_queue ( ),
           m_incoming_queue ( ),
           m_halting ( ),
@@ -152,6 +160,15 @@ namespace crisp
 
         send(Handshake { PROTOCOL_VERSION, role });
 
+        /* The default `handshake_response.received` handler will cancel this
+           action on successful handshake sequence. */
+        m_halt_action =
+          & scheduler.set_timer(std::chrono::seconds(5),
+                                [this](crisp::util::ScheduledAction&)
+                                { fprintf(stderr, "[0x%x] Handshake not completed before timer expired.  Halting.\n",
+                                          THREAD_ID);
+                                  halt(); });
+
         return true;
       }
 
@@ -194,7 +211,12 @@ namespace crisp
 
             if ( m_sync_action )
               m_sync_action->cancel();
+
+            if ( m_halt_action )
+              m_halt_action->cancel();
+
             m_sync_action = nullptr;
+            m_halt_action = nullptr;
 
             m_socket.close();
             m_outgoing_queue.wake_all();
