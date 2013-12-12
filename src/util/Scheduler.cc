@@ -11,17 +11,20 @@ namespace crisp
     {}
 
     Scheduler::~Scheduler()
-    {}
+    {
+      for ( ScheduledAction* action : m_actions )
+        delete action;
+    }
 
     ScheduledAction&
     Scheduler::set_timer(ScheduledAction::Duration duration, ScheduledAction::Function function)
     {
-      ScheduledAction action ( *this, function );
-      action.reset(duration);
+      ScheduledAction* action ( new ScheduledAction(*this, function) );
+      action->reset(duration);
       std::pair<ActionSet::iterator,bool>
         action_pair ( m_actions.insert(std::move(action)) );
       assert(action_pair.second);
-      return const_cast<ScheduledAction&>(*(action_pair.first));
+      return const_cast<ScheduledAction&>(**(action_pair.first));
     }
 
     PeriodicAction&
@@ -56,7 +59,8 @@ namespace crisp
     void
     Scheduler::remove(const ScheduledAction& action)
     {
-      m_actions.erase(action);
+      delete &action;
+      m_actions.erase(const_cast<ScheduledAction*>(&action));
     }
 
     boost::asio::io_service&

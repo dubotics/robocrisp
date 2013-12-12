@@ -116,7 +116,7 @@ namespace crisp
       /** A mapping from slot-interval to slot.  */
       typedef std::unordered_map<Slot::Duration,Slot> SlotMap;
 
-      typedef std::unordered_set<ScheduledAction> ActionSet;
+      typedef std::unordered_set<ScheduledAction*> ActionSet;
 
       /** Reference to the io_service used by this scheduler. */
       boost::asio::io_service& m_io_service;
