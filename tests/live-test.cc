@@ -168,6 +168,7 @@ main(int argc, char* argv[])
                         {
                           if ( ! error )
                             {
+                              fprintf(stderr, "Caught %s (%d); halting.\n", strsignal(sig), sig);
                               node.halt();
                             }
                         });

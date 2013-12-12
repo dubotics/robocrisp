@@ -116,15 +116,6 @@ namespace crisp
           dispatcher ( *this )
       {
         m_halting.clear();
-
-        m_dispatch_thread = std::thread(std::bind(&BasicNode::dispatch_received_loop, this));
-
-        boost::asio::spawn(m_io_service, std::bind(&BasicNode::receive_loop, this,
-                                                   std::placeholders::_1));
-        boost::asio::spawn(m_io_service, std::bind(&BasicNode::send_loop, this,
-                                                   std::placeholders::_1));
-
-        send(Handshake { PROTOCOL_VERSION, role });
       }
 
       ~BasicNode()
@@ -135,22 +126,43 @@ namespace crisp
 
       void run()
       {
-        std::unique_lock<std::mutex> lock ( m_halt_mutex );
         launch();
+        std::unique_lock<std::mutex> lock ( m_halt_mutex );
         m_halt_cv.wait(lock);
+
         if ( ! stopped )
           halt();
       }
 
       /** Launch worker threads to handle the node's IO. */
-      using WorkerObject::launch;
+      bool
+      launch()
+      {
+        if ( m_dispatch_thread.joinable() )
+          return false;
+
+        WorkerObject::launch();
+
+        m_dispatch_thread = std::thread(std::bind(&BasicNode::dispatch_received_loop, this));
+
+        boost::asio::spawn(m_io_service, std::bind(&BasicNode::receive_loop, this,
+                                                   std::placeholders::_1));
+        boost::asio::spawn(m_io_service, std::bind(&BasicNode::send_loop, this,
+                                                   std::placeholders::_1));
+
+        send(Handshake { PROTOCOL_VERSION, role });
+
+        return true;
+      }
 
 
+      /** Check if the node can be halted from within the current thread.  */
       bool
       can_halt() const
       {
         return WorkerObject::can_halt() && std::this_thread::get_id() != m_dispatch_thread.get_id();
       }
+
 
       /** Halt the node by closing the socket and waiting for its worker threads to finish.
        *
