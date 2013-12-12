@@ -183,7 +183,10 @@ namespace crisp
               {               /* Can't halt from this thread. */
                 m_stopped = false;
                 m_halting.clear();
+
+                std::unique_lock<std::mutex> lock ( m_halt_mutex );
                 m_halt_cv.notify_all();
+
                 return false;
               }
 
