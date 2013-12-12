@@ -27,6 +27,9 @@ namespace crisp
       /** Structure used to keep track of and control individual worker threads. */
       struct WorkerThread
       {
+        WorkerThread();
+        ~WorkerThread();
+
         /** Launch the worker thread, servicing the specified `io_service`.
          *
          * @param service The Boost.Asio `io_service` on which to service completion handlers.

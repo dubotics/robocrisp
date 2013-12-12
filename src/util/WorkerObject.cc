@@ -4,6 +4,19 @@ namespace crisp
 {
   namespace util
   {
+    WorkerObject::WorkerThread::WorkerThread()
+      : thread ( ),
+        should_halt ( false )
+    {}
+
+    WorkerObject::WorkerThread::~WorkerThread()
+    {
+      should_halt = true;
+
+      if ( thread.joinable() )
+        thread.join();
+    }
+
     bool
     WorkerObject::WorkerThread::launch(boost::asio::io_service& service)
     {
@@ -65,9 +78,12 @@ namespace crisp
     WorkerObject::halt()
     {
       bool canhalt ( can_halt() );
+
       if ( canhalt )
         for ( WorkerThread& worker : m_worker_threads )
           worker.halt();
+      m_worker_threads.clear();
+
       return canhalt;
     }
   }
