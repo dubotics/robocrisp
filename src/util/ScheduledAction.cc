@@ -7,6 +7,7 @@
  * This file does *not* contain the documentation for ScheduledAction; that
  * lives in the first header file included directly below this comment.
  */
+#define BOOST_ASIO_HAS_STD_CHRONO 1
 #include <crisp/util/ScheduledAction.hh>
 #include <crisp/util/Scheduler.hh>
 

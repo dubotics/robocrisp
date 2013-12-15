@@ -1,6 +1,7 @@
 #ifndef crisp_util_Scheduler_hh
 #define crisp_util_Scheduler_hh 1
 
+#define BOOST_ASIO_HAS_STD_CHRONO 1
 #include <chrono>
 #include <unordered_map>
 #include <unordered_set>
