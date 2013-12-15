@@ -31,7 +31,6 @@ link_directories(${Boost_LIBRARY_DIRS})
 
 add_definitions(
   "-std=c++11"
-  "-I${CMAKE_HOME_DIRECTORY}/core"
   "-fshort-enums"
   "-Wno-packed"
   "-Wno-conversion"
