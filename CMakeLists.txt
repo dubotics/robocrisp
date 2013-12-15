@@ -31,7 +31,6 @@ link_directories(${Boost_LIBRARY_DIRS})
 
 add_definitions(
   "-std=c++11"
-  "-fshort-enums"
   "-Wno-packed"
   "-Wno-conversion"
   "-Wno-attributes"
