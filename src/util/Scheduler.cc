@@ -12,22 +12,21 @@ namespace crisp
 
     Scheduler::~Scheduler()
     {
-      for ( ScheduledAction* action : m_actions )
-        delete action;
     }
 
-    ScheduledAction&
+    std::weak_ptr<ScheduledAction>
     Scheduler::set_timer(ScheduledAction::Duration duration, ScheduledAction::Function function)
     {
-      ScheduledAction* action ( new ScheduledAction(*this, function) );
+      std::shared_ptr<ScheduledAction> action ( std::make_shared<ScheduledAction>(*this, function) );
       action->reset(duration);
       std::pair<ActionSet::iterator,bool>
         action_pair ( m_actions.insert(std::move(action)) );
       assert(action_pair.second);
-      return const_cast<ScheduledAction&>(**(action_pair.first));
+
+      return *(action_pair.first);
     }
 
-    PeriodicAction&
+    std::weak_ptr<PeriodicAction>
     Scheduler::schedule(PeriodicScheduleSlot::Duration interval,
                                 PeriodicAction::Function function)
     {
@@ -50,17 +49,17 @@ namespace crisp
       assert(slot != NULL);
 
       /* Add the action to the slot. */
-      PeriodicAction& out ( slot->emplace(function) );
+      std::weak_ptr<PeriodicAction> out ( slot->emplace(function) );
       assert(! slot->empty() );
 
       return out;
     }
 
     void
-    Scheduler::remove(const ScheduledAction& action)
+    Scheduler::remove(const std::weak_ptr<ScheduledAction>& action)
     {
-      delete &action;
-      m_actions.erase(const_cast<ScheduledAction*>(&action));
+      if ( ! action.expired() )
+        m_actions.erase(action.lock());
     }
 
     boost::asio::io_service&

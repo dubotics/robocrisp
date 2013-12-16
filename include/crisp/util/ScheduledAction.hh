@@ -3,6 +3,7 @@
 
 #include <boost/asio/steady_timer.hpp>
 #include <functional>
+#include <memory>
 
 namespace crisp
 {
@@ -15,7 +16,7 @@ namespace crisp
      *  ScheduledAction provides a simplified interface for canceling and/or
      *  rescheduling the action.
      */
-    class ScheduledAction
+    class ScheduledAction : public std::enable_shared_from_this<ScheduledAction>
     {
     public:
       typedef boost::asio::steady_timer Timer; /**< Timer type used. */
@@ -25,9 +26,20 @@ namespace crisp
       /** Function type expected for user callbacks. */
       typedef std::function<void(ScheduledAction&)> Function;
 
+      inline std::weak_ptr<ScheduledAction>
+      get_pointer() { return shared_from_this(); }
+
     private:
       friend class Scheduler;
       friend class std::hash<ScheduledAction>;
+
+#if defined(__gcc__)
+      template < typename _Tp >
+      friend class __gnu_cxx::new_allocator;
+#elif defined(__clang__)
+      template < typename _A, typename _B, unsigned>
+      friend class std::__1::__libcpp_compressed_pair_imp;
+#endif
 
       ScheduledAction(Scheduler& scheduler, Function function);
 

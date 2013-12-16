@@ -81,7 +81,7 @@ namespace crisp
        *
        * @return Reference to the scheduled action object.
        */
-      ScheduledAction&
+      std::weak_ptr<ScheduledAction>
       set_timer(ScheduledAction::Duration duration, ScheduledAction::Function function);
 
 
@@ -94,7 +94,7 @@ namespace crisp
        * @return Reference to the Action object that represents the scheduled
        *     function call.
        */
-      PeriodicAction&
+      std::weak_ptr<PeriodicAction>
       schedule(Slot::Duration interval, PeriodicAction::Function function);
 
 
@@ -102,7 +102,7 @@ namespace crisp
        *
        * @param action Action to be canceled and removed.
        */
-      void remove(const ScheduledAction& action);
+      void remove(const std::weak_ptr<ScheduledAction>& action);
 
       /** Fetch a reference to the Boost.Asio `io_service` object used by this
        *  scheduler.
@@ -117,7 +117,7 @@ namespace crisp
       /** A mapping from slot-interval to slot.  */
       typedef std::unordered_map<Slot::Duration,Slot> SlotMap;
 
-      typedef std::unordered_set<ScheduledAction*> ActionSet;
+      typedef std::unordered_set<std::shared_ptr<ScheduledAction> > ActionSet;
 
       /** Reference to the io_service used by this scheduler. */
       boost::asio::io_service& m_io_service;

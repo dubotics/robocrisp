@@ -1,5 +1,6 @@
 #include <crisp/util/PeriodicAction.hh>
 #include <crisp/util/PeriodicScheduleSlot.hh>
+#include <crisp/util/Scheduler.hh>
 
 namespace crisp
 {
@@ -31,7 +32,9 @@ namespace crisp
     void
     PeriodicAction::cancel()
     {
-      slot->remove(*this);
+      slot->get_scheduler().get_io_service().
+        post(std::bind(&PeriodicScheduleSlot::remove, slot,
+                       get_pointer()));
     }
 
     bool

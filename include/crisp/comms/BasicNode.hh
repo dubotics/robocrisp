@@ -48,13 +48,13 @@ namespace crisp
       Socket m_socket;
 
       /** Handle to the scheduled period-action used for synchronization.  */
-      crisp::util::PeriodicAction* m_sync_action;
+      std::weak_ptr<crisp::util::PeriodicAction> m_sync_action;
 
       /** Handle to the scheduled "halt" action, used to disconnect the node if
        *  a handshake isn't completed within five seconds of the node being
        *  launched.
        */
-      crisp::util::ScheduledAction* m_halt_action;
+      std::weak_ptr<crisp::util::ScheduledAction> m_halt_action;
 
       crisp::util::SharedQueue<Message>
         m_outgoing_queue,         /**< Outgoing message queue. */
@@ -108,8 +108,8 @@ namespace crisp
       BasicNode(Socket&& _socket, NodeRole _role)
         : WorkerObject ( _socket.get_io_service(), 5 ),
           m_socket ( std::move(_socket) ),
-          m_sync_action ( nullptr ),
-          m_halt_action ( nullptr ),
+          m_sync_action ( ),
+          m_halt_action ( ),
           m_outgoing_queue ( ),
           m_incoming_queue ( ),
           m_halting ( ),
@@ -163,11 +163,11 @@ namespace crisp
         /* The default `handshake_response.received` handler will cancel this
            action on successful handshake sequence. */
         m_halt_action =
-          & scheduler.set_timer(std::chrono::seconds(5),
-                                [this](crisp::util::ScheduledAction&)
-                                { fprintf(stderr, "[0x%x] Handshake not completed before timer expired.  Halting.\n",
-                                          THREAD_ID);
-                                  halt(); });
+          scheduler.set_timer(std::chrono::seconds(5),
+                              [this](crisp::util::ScheduledAction&)
+                              { fprintf(stderr, "[0x%x] Handshake not completed before timer expired.  Halting.\n",
+                                        THREAD_ID);
+                                halt(); });
 
         return true;
       }
@@ -209,14 +209,14 @@ namespace crisp
 
             fprintf(stderr, "[0x%x] Halting... ", THREAD_ID);
 
-            if ( m_sync_action )
-              m_sync_action->cancel();
+            if ( ! m_sync_action.expired() )
+              m_sync_action.lock()->cancel();
 
-            if ( m_halt_action )
-              m_halt_action->cancel();
+            if ( ! m_halt_action.expired() )
+              m_halt_action.lock()->cancel();
 
-            m_sync_action = nullptr;
-            m_halt_action = nullptr;
+            m_sync_action.reset();
+            m_halt_action.reset();
 
             m_socket.close();
             m_outgoing_queue.wake_all();
@@ -264,7 +264,7 @@ namespace crisp
         fprintf(stderr, "[0x%x] Entered dispatch loop.\n", THREAD_ID);
         while ( ! stopped )
           {
-            bool aborted;
+            bool aborted ( false );
             Message message ( m_incoming_queue.next(&aborted) );
 
             if ( ! aborted )
@@ -280,7 +280,7 @@ namespace crisp
        */
       void send_loop(boost::asio::yield_context yield)
       {
-        bool aborted;
+        bool aborted ( false );
 
         fprintf(stderr, "[0x%x] Entered send loop.\n", THREAD_ID);
         while ( ! m_stopped )

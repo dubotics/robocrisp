@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <boost/system/error_code.hpp>
+#include <memory>
 
 namespace crisp
 {
@@ -14,7 +15,7 @@ namespace crisp
     /** An action scheduled on a PeriodicScheduleSlot.  `PeriodicAction` is used to
         manage a scheduled action by rescheduling, cancelling, or temporarily
         disabling it.  */
-    struct PeriodicAction
+    struct PeriodicAction : public std::enable_shared_from_this<PeriodicAction>
     {
       /** Function type for user callbacks.
        *
@@ -34,6 +35,9 @@ namespace crisp
 
       PeriodicAction(PeriodicScheduleSlot* _slot,
                      Function _function);
+
+      inline std::weak_ptr<PeriodicAction>
+      get_pointer() { return shared_from_this(); }
 
       /** Handler invoked by the slot's timer when it expires or is cancelled.
        * This function calls the user function whenever called with an empty

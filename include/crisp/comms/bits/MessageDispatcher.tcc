@@ -166,13 +166,13 @@ namespace crisp
 
           if ( hs.acknowledge == HandshakeAcknowledge::ACK )
             {
-              if ( _node.m_halt_action )
-                _node.m_halt_action->cancel();
-              _node.m_halt_action = nullptr;
+              if ( ! _node.m_halt_action.expired() )
+                _node.m_halt_action.lock()->cancel();
+              _node.m_halt_action.reset();
 
               using namespace crisp::util::literals;
-              _node.m_sync_action = & _node.scheduler.schedule(1_Hz, [&](crisp::util::PeriodicAction&)
-                                                               { _node.send(MessageType::SYNC); });
+              _node.m_sync_action = _node.scheduler.schedule(1_Hz, [&](crisp::util::PeriodicAction&)
+                                                             { _node.send(MessageType::SYNC); });
             }
           else
             _node.halt();

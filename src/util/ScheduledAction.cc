@@ -48,6 +48,7 @@ namespace crisp
         {
           m_timer->cancel();
           delete m_timer;
+          m_timer = nullptr;
         }
     }
 
@@ -66,7 +67,7 @@ namespace crisp
             now = std::chrono::steady_clock::now();
 
           if ( when_expires < now )
-            m_scheduler.remove(*this);
+            cancel();
         }
     }
 
@@ -74,7 +75,8 @@ namespace crisp
     ScheduledAction::cancel()
     {
       m_timer->cancel();
-      m_scheduler.remove(*this);
+      m_scheduler.get_io_service().post(std::bind(&Scheduler::remove, &m_scheduler,
+                                                  get_pointer()));
     }
 
     void

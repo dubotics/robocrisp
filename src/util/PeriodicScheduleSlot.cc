@@ -30,16 +30,23 @@ namespace crisp
       m_timer = nullptr;
     }
 
+    Scheduler&
+    PeriodicScheduleSlot::get_scheduler() const
+    {
+      return m_scheduler;
+    }      
+
+
     bool
     PeriodicScheduleSlot::empty()
     { return m_actions.empty(); }
 
 
-    PeriodicAction&
+    std::weak_ptr<PeriodicAction>
     PeriodicScheduleSlot::push(const PeriodicAction& action)
     {
       bool was_empty ( m_actions.empty() );
-      m_actions.push_front(action);
+      m_actions.push_front(std::make_shared<PeriodicAction>(action));
 
       if ( was_empty )
         reset_timer();
@@ -48,11 +55,11 @@ namespace crisp
     }
 
 
-    PeriodicAction&
+    std::weak_ptr<PeriodicAction>
     PeriodicScheduleSlot::push(PeriodicAction&& action)
     {
       bool was_empty ( m_actions.empty() );
-      m_actions.push_front(std::move(action));
+      m_actions.push_front(std::make_shared<PeriodicAction>(std::move(action)));
 
       if ( was_empty )
         reset_timer();
@@ -61,9 +68,10 @@ namespace crisp
     }
 
     void
-    PeriodicScheduleSlot::remove(const PeriodicAction& action)
+    PeriodicScheduleSlot::remove(const std::weak_ptr<PeriodicAction>& action)
     {
-      m_actions.remove(action);
+      if ( ! action.expired() )
+        m_actions.remove(action.lock());
 
       if ( m_actions.empty() )
         m_timer->cancel();
@@ -85,9 +93,9 @@ namespace crisp
       m_timer->expires_from_now(m_interval);
 
       /* Set up the action callbacks for this run. */
-      for ( PeriodicAction& action : m_actions )
-        if ( action.active )
-          m_timer->async_wait(std::bind(&PeriodicAction::timer_expiry_handler, &action, std::placeholders::_1));
+      for ( const std::shared_ptr<PeriodicAction>& action : m_actions )
+        if ( action->active )
+          m_timer->async_wait(std::bind(&PeriodicAction::timer_expiry_handler, action.get(), std::placeholders::_1));
 
       /* Set up the slot's expiry handler so we can reset the timer again.  */
       m_timer->async_wait(std::bind(&PeriodicScheduleSlot::timer_expiry_handler, this, std::placeholders::_1));

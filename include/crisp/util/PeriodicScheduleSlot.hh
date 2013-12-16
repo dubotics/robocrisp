@@ -5,6 +5,7 @@
 #include <boost/asio/steady_timer.hpp>
 #include <forward_list> 
 #include <thread>
+#include <memory>
 
 namespace crisp
 {
@@ -33,9 +34,8 @@ namespace crisp
 
 
     protected:
-
       /** A set of actions to be performed   */
-      typedef std::forward_list<PeriodicAction> ActionList;
+      typedef std::forward_list<std::shared_ptr<PeriodicAction> > ActionList;
 
       /** Scheduler that owns this slot. */
       Scheduler& m_scheduler;
@@ -76,23 +76,29 @@ namespace crisp
       virtual ~PeriodicScheduleSlot();
 
 
+      /** Get a reference to the scheduler that owns this slot.
+       */
+      Scheduler&
+      get_scheduler() const;
+
+
       /** Check if the slot is empty (has no assigned actions). */
       bool
       empty();
 
       /** Add an action to the slot (via copy-construct). */
-      PeriodicAction&
+      std::weak_ptr<PeriodicAction>
       push(const PeriodicAction& action);
 
       /** Add an action to the slot (via move-construct).
        */
-      PeriodicAction&
+      std::weak_ptr<PeriodicAction>
       push(PeriodicAction&& action);
 
 
       /** Emplace a new assigned action. */
       template < typename... Args >
-      PeriodicAction&
+      std::weak_ptr<PeriodicAction>
       emplace(Args... args);
 
 
@@ -101,7 +107,7 @@ namespace crisp
        * @param action The action to be removed.
        */
       void
-      remove(const PeriodicAction& action);
+      remove(const std::weak_ptr<PeriodicAction>& action);
     };
   }
 }

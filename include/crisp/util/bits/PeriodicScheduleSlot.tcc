@@ -8,11 +8,11 @@ namespace crisp
   namespace util
   {
     template < typename... Args >
-    PeriodicAction&
+    std::weak_ptr<PeriodicAction>
     PeriodicScheduleSlot::emplace(Args... args)
     {
       bool was_empty ( m_actions.empty() );
-      m_actions.emplace_front(this, args...);
+      m_actions.emplace_front(std::make_shared<PeriodicAction>(this, args...));
 
       if ( was_empty )
         reset_timer();
