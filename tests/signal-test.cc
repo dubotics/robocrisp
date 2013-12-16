@@ -14,7 +14,7 @@ main(int argc, char* argv[])
 
   Signal<void(int)> int_signal;
   std::weak_ptr<typename Signal<void(int)>::Action>
-    int_action ( int_signal.add(int_callback) );
+    int_action ( int_signal.connect(int_callback) );
   int_signal.emit(33);
   int_signal.remove(int_action);
   int_signal.emit(0xDEADBEEF);          /* ERROR if int_callback is called for

@@ -75,7 +75,7 @@ namespace crisp
 
     template < typename Return, typename... Args >
     std::weak_ptr<typename Signal<Return(Args...)>::Action>
-    Signal<Return(Args...)>::add(typename Signal<Return(Args...)>::Function&& function)
+    Signal<Return(Args...)>::connect(typename Signal<Return(Args...)>::Function&& function)
     {
       std::unique_lock<std::mutex> lock ( m_mutex );
 

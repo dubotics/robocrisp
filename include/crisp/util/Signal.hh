@@ -80,7 +80,7 @@ namespace crisp
        *     from the signal.
        */
       std::weak_ptr<Action>
-      add(Function&& function);
+      connect(Function&& function);
 
       /** Remove a previously-added callback.
        *
