@@ -33,12 +33,12 @@ namespace crisp
       friend class Scheduler;
       friend class std::hash<ScheduledAction>;
 
-#if defined(__gcc__)
-      template < typename _Tp >
-      friend class __gnu_cxx::new_allocator;
-#elif defined(__clang__)
+#if defined(__clang__)
       template < typename _A, typename _B, unsigned>
       friend class std::__1::__libcpp_compressed_pair_imp;
+#elif defined(__GNUC__)
+      template < typename _Tp >
+      friend class __gnu_cxx::new_allocator;
 #endif
 
       ScheduledAction(Scheduler& scheduler, Function function);
