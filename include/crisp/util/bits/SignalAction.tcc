@@ -28,7 +28,7 @@ namespace crisp
     
     template < typename Return, typename... Args >
     void
-    SignalAction<Return(Args...)>::cancel()
+    SignalAction<Return(Args...)>::disconnect()
     {
       m_signal.remove(get_pointer());
     }

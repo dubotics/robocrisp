@@ -66,7 +66,7 @@ namespace crisp
       get_pointer();
 
       /** Remove this action from the signal's action list. */
-      void cancel();
+      void disconnect();
     };
   }
 }
