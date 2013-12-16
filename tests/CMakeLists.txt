@@ -21,3 +21,5 @@ add_executable(periodic-test periodic-test.cc)
 target_link_libraries(periodic-test crisp-util boost_system)
 
 
+add_executable(signal-test signal-test.cc)
+target_link_libraries(signal-test crisp-util boost_system)
