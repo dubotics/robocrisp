@@ -17,7 +17,8 @@ main(int argc, char* argv[])
     int_action ( int_signal.add(int_callback) );
   int_signal.emit(33);
   int_signal.remove(int_action);
-  int_signal.emit(0xDEADBEEF);          /* ERROR */
+  int_signal.emit(0xDEADBEEF);          /* ERROR if int_callback is called for
+                                           this one. */
 
   /* TODO: do some more testing */
 
