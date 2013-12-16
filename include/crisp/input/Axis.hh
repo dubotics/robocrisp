@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <initializer_list>
 #include <vector>
+#include <algorithm>
 
 #include <crisp/input/MappedEventSource.hh>
 
