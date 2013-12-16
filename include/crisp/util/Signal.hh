@@ -45,8 +45,12 @@ namespace crisp
       /** Actions assigned to this signal. */
       ActionSet m_actions;
 
+      /** If non-null, a pointer to the Boost.Asio `io_service` passed to the
+          object's constructor and to be used for callback invocation.  */
       boost::asio::io_service* m_io_service;
 
+      /** Mutex used to synchronize modifications of the action-set across
+          threads.  */
       std::mutex m_mutex;
 
     public:
@@ -68,6 +72,12 @@ namespace crisp
       virtual ~Signal();
       
       /** Add a function to be called on signal emission.
+       *
+       * @param function Function to call.
+       *
+       * @return A weak pointer reference to the internal object used to wrap
+       *     the supplied function.  This may be used to disconnect the handler
+       *     from the signal.
        */
       std::weak_ptr<Action>
       add(Function&& function);
@@ -78,7 +88,10 @@ namespace crisp
        */
       void remove(const std::weak_ptr<Action>& action);
 
-      /** Emit the signal and invoke callbacks. */
+      /** Emit the signal and invoke callbacks.
+       *
+       * @param args Arguments to be passed to the connected callbacks.
+       */
       void emit(Args... args);
     };
   }
