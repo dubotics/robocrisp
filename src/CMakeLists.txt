@@ -62,4 +62,5 @@ set_property(TARGET crisp-input
 
 target_link_libraries(crisp-input
   ${Boost_SYSTEM_LIBRARY_RELEASE}
+  ${EVDEV_LIBRARIES}
   )

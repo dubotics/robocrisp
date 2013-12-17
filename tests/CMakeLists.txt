@@ -16,7 +16,7 @@ add_executable(controller-test controller-test.cc)
 set_property(TARGET controller-test
   APPEND PROPERTY INCLUDE_DIRECTORIES ${EVDEV_INCLUDE_DIRS}
   )
-target_link_libraries(controller-test crisp-input pthread ${EVDEV_LIBRARIES})
+target_link_libraries(controller-test crisp-input pthread)
 
 
 # Scheduler test
