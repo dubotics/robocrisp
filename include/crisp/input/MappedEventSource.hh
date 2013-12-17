@@ -1,8 +1,7 @@
 #ifndef input_MappedEventSource_hh
 #define input_MappedEventSource_hh 1
 
-#include <boost/signals2/signal.hpp>
-#include <boost/move/move.hpp>
+#include <crisp/util/Signal.hh>
 
 namespace crisp
 {
@@ -26,20 +25,19 @@ namespace crisp
       typedef _T Type;	  	/**< Derived-class type. */
       typedef _Value Value;	/**< Type of values for events from this
 				   source. */    
-      typedef _RawValue RawValue;	/**< Type of _raw_ (unmapped) values for events
-					   from this source. */
+      typedef _RawValue RawValue; /**< Type of _raw_ (unmapped) values for
+					   events from this source. */
 
       typedef unsigned int ID;
-
-      /** Type for objects that represent a signal-handler's (callback's)
-	  connection to its signal source. */
-      typedef boost::signals2::connection Connection;
 
       /** Signal type. This is the type of signal to which `hook` connects
        *  callbacks.
        */
-      typedef boost::signals2::signal<void(const Type&, RawValue, Value)>
-      Signal;
+      typedef crisp::util::Signal<void(const Type&, RawValue, Value)> Signal;
+
+      /** Type for objects that represent a signal-handler's (callback's)
+	  connection to its signal source. */
+      typedef typename Signal::Connection Connection;
 
 
       /** Basic constructor.
@@ -56,9 +54,8 @@ namespace crisp
       MappedEventSource(MappedEventSource&& mes)
         : id ( m_id ),
 	  m_id ( std::move(mes.m_id) ),
-	  m_signal ( )
+	  m_signal ( std::move(mes.m_signal) )
       {
-	m_signal.swap(mes.m_signal);
       }
 
       /** Defaulted virtual destructor provided for polymorphic use of derived
@@ -86,7 +83,7 @@ namespace crisp
       post(RawValue raw_value)
       {
 	Value mapped_value ( map(raw_value) );
-	m_signal(static_cast<const Type&>(*this), raw_value, mapped_value);
+	m_signal.emit(std::cref(static_cast<Type&>(*this)), raw_value, mapped_value);
       }
 
 
@@ -99,7 +96,7 @@ namespace crisp
        * @return A connection object that can be used to disconnect the callback
        *     from the source signal.
        */
-      Connection hook(typename Signal::slot_type callback)
+      Connection hook(typename Signal::Function callback)
       { return m_signal.connect(callback); }
 
 
