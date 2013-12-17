@@ -54,4 +54,6 @@ add_library(crisp-input STATIC
   input/Controller.cc
   ${INPUT_PLATFORM_SOURCES}
   )
-
+target_link_libraries(crisp-input
+  ${Boost_SYSTEM_LIBRARY_RELEASE}
+  )
