@@ -13,7 +13,10 @@ target_link_libraries(transcoder-test crisp-comms crisp-util)
 
 # Basic controller test.
 add_executable(controller-test controller-test.cc)
-target_link_libraries(controller-test crisp-input pthread)
+set_property(TARGET controller-test
+  APPEND PROPERTY INCLUDE_DIRECTORIES ${EVDEV_INCLUDE_DIRS}
+  )
+target_link_libraries(controller-test crisp-input pthread ${EVDEV_LIBRARIES})
 
 
 # Scheduler test

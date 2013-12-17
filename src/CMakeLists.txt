@@ -55,6 +55,11 @@ add_library(crisp-input STATIC
   input/Controller.cc
   ${INPUT_PLATFORM_SOURCES}
   )
+
+set_property(TARGET crisp-input
+  APPEND PROPERTY INCLUDE_DIRECTORIES ${EVDEV_INCLUDE_DIRS}
+  )
+
 target_link_libraries(crisp-input
   ${Boost_SYSTEM_LIBRARY_RELEASE}
   )

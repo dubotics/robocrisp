@@ -8,16 +8,28 @@ namespace crisp
 
     template class MappedEventSource<Axis, int32_t, double>;
 
+    Axis::Axis(Axis::Type _type, Axis::ID _id)
+      : BaseType ( _id ),
+        type ( _type ),
+	raw ( ),
+	map_method ( MapMethod::NONE ),
+	coefficients ( )
+    {
+    }
+
     Axis::Axis(Axis::ID _id, RawConfig _raw)
       : BaseType ( _id ),
+        type ( Axis::Type::ABSOLUTE ),
 	raw ( _raw ),
 	map_method ( MapMethod::LINEAR ),
 	coefficients ( )
     {
     }
 
+
     Axis::Axis(Axis::ID _id, RawConfig _raw, const std::initializer_list<Value>& _coefficients)
       : BaseType ( _id ),
+        type ( Axis::Type::ABSOLUTE ),
 	raw ( _raw ),
 	map_method ( MapMethod::POLYNOMIAL ),
 	coefficients ( )
@@ -27,6 +39,7 @@ namespace crisp
 
     Axis::Axis(Axis&& a)
       : BaseType ( std::move(a) ),
+        type ( std::move(a.type) ),
 	raw ( std::move(a.raw) ),
 	map_method ( std::move(a.map_method) ),
 	coefficients ( std::move(a.coefficients) )
@@ -145,6 +158,16 @@ namespace crisp
 	}
 
       return out;
+    }
+
+    void
+    Axis::post(Axis::RawValue raw)
+    {
+      State state = { raw, 0 };
+      if ( map_method != MapMethod::NONE )
+        state.value = map(raw);
+
+      m_signal.emit(*this, state);
     }
 
   }

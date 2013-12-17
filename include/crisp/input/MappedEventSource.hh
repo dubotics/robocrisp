@@ -28,12 +28,20 @@ namespace crisp
       typedef _RawValue RawValue; /**< Type of _raw_ (unmapped) values for
 					   events from this source. */
 
-      typedef unsigned int ID;
+      /** State of the event source's value.  */
+      struct State
+      {
+        RawValue raw_value;
+        Value value;
+      };
+
+
+      typedef uint32_t ID;
 
       /** Signal type. This is the type of signal to which `hook` connects
        *  callbacks.
        */
-      typedef crisp::util::Signal<void(const Type&, RawValue, Value)> Signal;
+      typedef crisp::util::Signal<void(const Type&, State)> Signal;
 
       /** Type for objects that represent a signal-handler's (callback's)
 	  connection to its signal source. */
@@ -83,7 +91,7 @@ namespace crisp
       post(RawValue raw_value)
       {
 	Value mapped_value ( map(raw_value) );
-	m_signal.emit(std::cref(static_cast<Type&>(*this)), raw_value, mapped_value);
+	m_signal.emit(std::cref(static_cast<Type&>(*this)), { raw_value, mapped_value });
       }
 
 
@@ -102,7 +110,7 @@ namespace crisp
 
 
       const ID& id;
-    private:
+    protected:
       Signal m_signal;
       ID m_id;
     };

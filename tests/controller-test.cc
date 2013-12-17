@@ -41,9 +41,10 @@ main(int argc, char* argv[])
   EvDevController controller ( argv[1] );
   for ( Axis& axis : controller.axes )
     {
-      axis.set_coefficients({ 1, 0, 0, 0 }); /* y = x³ */
-      axis.hook([&](const Axis& _axis, Axis::RawValue raw, Axis::Value value)
-		{ fprintf(stderr, "[%2d] raw %8d | mapped %.5f\n", axis.id, raw, value); });
+      if ( axis.type == Axis::Type::ABSOLUTE )
+        axis.set_coefficients({ 1, 0, 0, 0 }); /* y = x³ */
+      axis.hook([&](const Axis& _axis, Axis::State state)
+		{ fprintf(stderr, "[%2d] raw %8d | mapped %.5f\n", axis.id, state.raw_value, state.value); });
     }
   std::atomic<bool> run_flag ( true );
   std::thread controller_thread ( [&]() { controller.run(run_flag); });

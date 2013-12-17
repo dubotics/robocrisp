@@ -27,6 +27,11 @@ endif(NOT Boost_FOUND)
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 
+# ----------------------------------------------------------------
+
+find_package(PkgConfig)
+pkg_check_modules(EVDEV REQUIRED libevdev)
+
 ################################################################
 
 add_definitions(

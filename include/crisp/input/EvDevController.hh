@@ -3,8 +3,17 @@
 
 #include <system_error>
 #include <unordered_map>
-
+#include <libevdev/libevdev.h>
 #include <crisp/input/Controller.hh>
+
+namespace std
+{
+  template <> struct hash<std::pair<uint16_t,uint16_t> >
+  {
+    inline constexpr size_t operator()(const std::pair<uint16_t,uint16_t>& p) const noexcept
+    { return ((p.first << 16) | p.second); }
+  };
+}
 
 namespace crisp
 {
@@ -16,12 +25,11 @@ namespace crisp
     {
     private:
       int m_fd;
-      std::unordered_map<uint16_t,size_t> m_axis_map; /**< Mapping from axis code to index. */
+      libevdev* m_evdev;
+      std::unordered_map<std::pair<uint16_t, uint16_t>,size_t>
+        m_axis_map; /**< Mapping from axis type and code to index. */
+
       /* std::vector<Button> m_buttons; */
-      char
-      *m_name,
-	*m_location,
-	*m_identifier;
 
       ssize_t
       wait_for_event(struct input_event* e);
@@ -40,14 +48,6 @@ namespace crisp
        *  blocks execution.
        */
       virtual void run(const std::atomic<bool>& run_flag);
-
-      /** Public, read-only accessors for private state variables.
-       *@{
-       */
-      const char*& name;
-      const char*& location;
-      const char*& identifier;
-      /**@}*/
     };
   }
 }

@@ -17,17 +17,30 @@ namespace crisp
     class Axis;
     extern template class MappedEventSource<Axis, int32_t, double>;
 
-    /** An absolute axis on an input device.  Axis supports both the linear
-     *  value-mapping of MappedEventSource, and an arbitrary polynomial-expansion
-     *  mapping with user-supplied polynomial coefficients.
+    /** An axis on an input device.
+     *
+     *  For absolute axes, Axis supports both the linear value-mapping of
+     *  MappedEventSource, and an arbitrary polynomial-expansion mapping with
+     *  user-supplied polynomial coefficients.
      */
     class Axis : public input::MappedEventSource<Axis, int32_t, double>
     {
       typedef MappedEventSource<Axis, int32_t, double> BaseType;
+
     public:
+      using BaseType::ID;
+
+      /** Axis-value reporting style. */
+      enum class Type
+      {
+        ABSOLUTE,               /**< Values are absolute input states. */
+        RELATIVE                /**< Values are relative to the last input state. */
+      };
+
       /** Method used to map a raw axis value to its output value. */
       enum class MapMethod
       {
+        NONE,                   /**< No mapping is done. */
 	LINEAR,			/**< Only the base linear mapping is used. */
 	POLYNOMIAL		/**< After linear mapping, a polynomial
 				   expansion with user-supplied coefficients is
@@ -45,6 +58,7 @@ namespace crisp
 	  deadzone_upper;	/**< Upper deadzone value. */
       };
 
+      Type type;
       MapMethod map_method;	/**< Kind of value-mapping selected for this axis. */
       RawConfig raw;		/**< Raw-value mapping configuration. */
 
@@ -59,7 +73,16 @@ namespace crisp
       std::vector<Value> coefficients;
 
 
-      /** Initialize an axis with linear mapping only.
+      /** Initialize a relative or absolute axis with no pre-set value mapping.
+       *
+       * @param _type Type of axis; either `Axis::Type::ABSOLUTE` or
+       *     `Axis::Type::RELATIVE`.
+       *
+       * @param _id Implementation- and hardware-specific ID code for the axis.
+       */
+      Axis(Type _type, ID _id);
+
+      /** Initialize an absolute axis with linear mapping only.
        *
        * @param _raw Raw-value mapping configuration.  This structure is used to
        *     _initialize_ the axis' "raw" field; i.e. the passed configuration may
@@ -119,6 +142,12 @@ namespace crisp
        * @return A value mapped onto the output space from linear space. 
        */
       Value map(Value linear_value) const;
+
+
+      /* override the MappedEventSource method to allow for value-map type
+         "none" */
+      void
+      post(RawValue raw);
 
 
       /**@name Deleted constructors.
