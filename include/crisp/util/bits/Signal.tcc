@@ -21,6 +21,12 @@ namespace crisp
     {}
 
     template < typename Return, typename... Args >
+    Signal<Return(Args...)>::Signal(Signal&& sig)
+    : m_actions ( std::move(sig.m_actions) ),
+      m_io_service ( sig.m_io_service )
+    {}
+
+    template < typename Return, typename... Args >
     Signal<Return(Args...)>::~Signal()
     {}
 
@@ -37,28 +43,45 @@ namespace crisp
       std::unique_lock<std::mutex> lock ( m_mutex );
       /* The use case for this code does not anticipate a significant number of
          actions per signal -- so we'll allocate space for our copied pointers
-         on the stack (stack allocation is pretty damn fast).  */
-      std::shared_ptr<Action>* actions
-        ( static_cast<std::shared_ptr<Action>*>(alloca(m_actions.size() *
-                                                       sizeof(std::shared_ptr<Action>))) );
+         on the stack (stack allocation is pretty damn fast).
+
+         We use `std::weak_ptr`s for the copied pointers to allow changes
+         (e.g. disconnections) by other threads to take effect in the time
+         between this copy operation and each handler's invocation.
+      */
+      std::weak_ptr<Action>* actions
+        ( static_cast<std::weak_ptr<Action>*>(alloca(m_actions.size() *
+                                                     sizeof(std::shared_ptr<Action>))) );
       for ( const std::shared_ptr<Action>& action : m_actions )
-        new ( &actions[i++] ) std::shared_ptr<Action>(action);
+        new ( &actions[i++] ) std::weak_ptr<Action>(action);
       lock.unlock();
 
 
       /* Invoke the user callbacks as appropriate. */
       if ( m_io_service )
-        for ( size_t j ( 0 ); j < i; ++j )
-          m_io_service->post(std::bind(actions[j]->m_function, args...));
+        {
+          for ( size_t j ( 0 ); j < i; ++j )
+            {
+              std::shared_ptr<Action> action ( actions[j].lock() );
+              if ( action )
+                m_io_service->post(std::bind(action->m_function, std::ref(args)...));
+            }
+        }
       else
-        for ( size_t j ( 0 ); j < i; ++j )
-          actions[j]->m_function(args...);
+        {
+          for ( size_t j ( 0 ); j < i; ++j )
+            {
+              std::shared_ptr<Action> action ( actions[j].lock() );
+              if ( action )
+                action->m_function(args...);
+            }
+        }
 
 
       /* Destructors of objects constructed via placement new must be called
          manually. */
       for ( size_t j ( 0 ); j < i; ++j )
-        actions[j].~shared_ptr<Action>();
+        actions[j].~weak_ptr();
     }
 
     template < typename Return, typename... Args >
@@ -74,8 +97,8 @@ namespace crisp
     }
 
     template < typename Return, typename... Args >
-    std::weak_ptr<typename Signal<Return(Args...)>::Action>
-    Signal<Return(Args...)>::connect(typename Signal<Return(Args...)>::Function&& function)
+    typename Signal<Return(Args...)>::Connection
+    Signal<Return(Args...)>::connect(typename Signal<Return(Args...)>::Function function)
     {
       std::unique_lock<std::mutex> lock ( m_mutex );
 

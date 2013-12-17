@@ -36,6 +36,9 @@ namespace crisp
       /** SignalAction type used by the signal. */
       typedef SignalAction<Return(Args...)> Action;
 
+      /** Reference-to-action type used by the signal. */
+      typedef std::weak_ptr<Action> Connection;
+
       /** Alias of Action::Function for brevity's sake. */
       typedef typename Action::Function Function;
 
@@ -59,6 +62,10 @@ namespace crisp
        */
       Signal();
 
+      /** Move constructor.
+       */
+      Signal(Signal&& sig);
+
       /** Set up a signal to invoke callbacks via a Boost.Asio `io_service`.
        *
        * @param service The io_service to use.  Callbacks will be invoked via
@@ -79,14 +86,14 @@ namespace crisp
        *     the supplied function.  This may be used to disconnect the handler
        *     from the signal.
        */
-      std::weak_ptr<Action>
-      connect(Function&& function);
+      Connection
+      connect(Function function);
 
       /** Remove a previously-added callback.
        *
        * @param action Weak pointer to the action to remove.
        */
-      void remove(const std::weak_ptr<Action>& action);
+      void remove(const Connection& action);
 
       /** Emit the signal and invoke callbacks.
        *

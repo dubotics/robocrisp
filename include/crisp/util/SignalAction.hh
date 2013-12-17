@@ -55,6 +55,8 @@ namespace crisp
        */
       SignalAction(Signal& signal, Function&& function);
 
+      /** Move constructor. */
+      SignalAction(SignalAction&& action) = default;
 
       /** Virtual destructor provided to enable polymorphic use of derived
        *  types.

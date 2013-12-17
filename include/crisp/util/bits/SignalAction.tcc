@@ -14,6 +14,7 @@ namespace crisp
         m_function ( function )
     {}
 
+
     template < typename Return, typename... Args >
     SignalAction<Return(Args...)>::~SignalAction()
     {}
