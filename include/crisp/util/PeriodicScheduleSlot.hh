@@ -1,6 +1,7 @@
 #ifndef crisp_util_PeriodicScheduleSlot_hh
 #define crisp_util_PeriodicScheduleSlot_hh 1
 
+#define BOOST_ASIO_HAS_STD_CHRONO 1
 #include <crisp/util/PeriodicAction.hh>
 #include <boost/asio/steady_timer.hpp>
 #include <forward_list> 

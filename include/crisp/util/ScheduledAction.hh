@@ -1,6 +1,7 @@
 #ifndef crisp_util_ScheduledAction_hh
 #define crisp_util_ScheduledAction_hh 1
 
+#define BOOST_ASIO_HAS_STD_CHRONO 1
 #include <boost/asio/steady_timer.hpp>
 #include <functional>
 #include <memory>
@@ -33,7 +34,7 @@ namespace crisp
       friend class Scheduler;
       friend class std::hash<ScheduledAction>;
 
-#if defined(__clang__)
+#if defined(__LIBCPP_VERSION)
       template < typename _A, typename _B, unsigned>
       friend class std::__1::__libcpp_compressed_pair_imp;
 #elif defined(__GNUC__)
