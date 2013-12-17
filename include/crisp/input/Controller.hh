@@ -12,9 +12,8 @@ namespace crisp
 {
   namespace input
   {
-    /** Linux `evdev`-based game controller class.
-     *
-     * This is mostly just a collection of axes right now; needs some 
+    /** Generic controller class.  This has pure-virtual method(s) and cannot be
+        used directly; see e.g. EvDevController for an implementation.
      */
     class Controller
     {
