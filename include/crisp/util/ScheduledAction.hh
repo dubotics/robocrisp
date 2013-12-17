@@ -1,6 +1,7 @@
 #ifndef crisp_util_ScheduledAction_hh
 #define crisp_util_ScheduledAction_hh 1
 
+#define BOOST_ASIO_HAS_STD_CHRONO 1
 #include <boost/asio/steady_timer.hpp>
 #include <functional>
 #include <memory>
