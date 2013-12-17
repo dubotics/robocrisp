@@ -57,8 +57,23 @@ namespace crisp
 	  deadzone_lower,	/**< Lower deadzone value. */
 	  deadzone_upper;	/**< Upper deadzone value. */
       };
+    public:
+      Type
+        type,                   /**< Hardware reporting style for the axis. */
+        mode;                   /**< Software reporting style for the axis.
+                                   When `mode` is different from `type`, the
+                                   axis will emulate the selected axis type. */
 
-      Type type;
+    protected:
+       /**< Last "raw" value for the axis.
+        *
+        * When emulating an absolute axis, this will contain the most recent
+        * _emulated_ absolute raw value; when emulating a relative axis, it will
+        * contain the most recent _hardware-reported_ absolute raw value.
+        */
+      RawValue m_last_raw_value;
+
+    public:
       MapMethod map_method;	/**< Kind of value-mapping selected for this axis. */
       RawConfig raw;		/**< Raw-value mapping configuration. */
 
@@ -144,8 +159,8 @@ namespace crisp
       Value map(Value linear_value) const;
 
 
-      /* override the MappedEventSource method to allow for value-map type
-         "none" */
+      /* override the MappedEventSource method to allow for emulating a
+         different axis type and for value-map type "none" */
       void
       post(RawValue raw);
 

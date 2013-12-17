@@ -11,6 +11,8 @@ namespace crisp
     Axis::Axis(Axis::Type _type, Axis::ID _id)
       : BaseType ( _id ),
         type ( _type ),
+        mode ( _type ),
+        m_last_raw_value ( 0 ),
 	raw ( ),
 	map_method ( MapMethod::NONE ),
 	coefficients ( )
@@ -20,6 +22,8 @@ namespace crisp
     Axis::Axis(Axis::ID _id, RawConfig _raw)
       : BaseType ( _id ),
         type ( Axis::Type::ABSOLUTE ),
+        mode ( type ),
+        m_last_raw_value ( 0 ),
 	raw ( _raw ),
 	map_method ( MapMethod::LINEAR ),
 	coefficients ( )
@@ -30,6 +34,8 @@ namespace crisp
     Axis::Axis(Axis::ID _id, RawConfig _raw, const std::initializer_list<Value>& _coefficients)
       : BaseType ( _id ),
         type ( Axis::Type::ABSOLUTE ),
+        mode ( type ),
+        m_last_raw_value ( 0 ),
 	raw ( _raw ),
 	map_method ( MapMethod::POLYNOMIAL ),
 	coefficients ( )
@@ -40,6 +46,8 @@ namespace crisp
     Axis::Axis(Axis&& a)
       : BaseType ( std::move(a) ),
         type ( std::move(a.type) ),
+        mode ( std::move(a.mode) ),
+        m_last_raw_value ( 0 ),
 	raw ( std::move(a.raw) ),
 	map_method ( std::move(a.map_method) ),
 	coefficients ( std::move(a.coefficients) )
@@ -75,10 +83,6 @@ namespace crisp
     Axis::map(Axis::RawValue raw_value) const
     {
       Value x ( 0.0 );
-
-      /* Clip raw_value to [minimum, maximum].  We shouldn't need to do this, but
-	 it's quite possible someone could play with `raw` and break things. */
-      raw_value = std::min(std::max(raw_value, raw.minimum), raw.maximum);
 
       /* Now: here's _how_ we're going to deal with things.
 
@@ -161,11 +165,32 @@ namespace crisp
     }
 
     void
-    Axis::post(Axis::RawValue raw)
+    Axis::post(Axis::RawValue raw_value)
     {
-      State state = { raw, 0 };
+      State state = { raw_value, 0 };
+
+      /* Handle axis-type emulation. */
+      if ( mode != type )
+        switch ( mode )
+          {
+          case Type::RELATIVE:
+            state.raw_value = raw_value - m_last_raw_value;
+            m_last_raw_value = raw_value;
+            break;
+
+          case Type::ABSOLUTE:
+            state.raw_value += m_last_raw_value;
+
+            m_last_raw_value = state.raw_value;
+            break;
+          }
+
+      if ( type == Type::ABSOLUTE || mode == Type::ABSOLUTE )
+        /* Clip raw_value to [minimum, maximum]. */
+        state.raw_value = std::min(std::max(state.raw_value, raw.minimum), raw.maximum);
+
       if ( map_method != MapMethod::NONE )
-        state.value = map(raw);
+        state.value = map(state.raw_value);
 
       m_signal.emit(*this, state);
     }
