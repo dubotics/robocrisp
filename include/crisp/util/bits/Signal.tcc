@@ -86,6 +86,14 @@ namespace crisp
 
     template < typename Return, typename... Args >
     void
+    Signal<Return(Args...)>::clear()
+    {
+      std::unique_lock<std::mutex> lock ( m_mutex );
+      m_actions.clear(action.lock());
+    }
+
+    template < typename Return, typename... Args >
+    void
     Signal<Return(Args...)>::remove
       (const std::weak_ptr<typename Signal<Return(Args...)>::Action>& action)
     {

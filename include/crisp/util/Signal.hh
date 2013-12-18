@@ -95,6 +95,10 @@ namespace crisp
        */
       void remove(const Connection& action);
 
+      /** Disconnect _all_ previously-connected callbacks.
+       */
+      void clear();
+
       /** Emit the signal and invoke callbacks.
        *
        * @param args Arguments to be passed to the connected callbacks.
