@@ -16,7 +16,5 @@ namespace crisp
     {
       return raw_value ? ButtonState::PRESSED : ButtonState::RELEASED;
     }
-
-
   }
 }
