@@ -39,28 +39,26 @@ target_link_libraries(crisp-comms
 
 ################################################################
 # Input library
-if(UNIX AND NOT APPLE)
-  # Assume Linux, since CMake doesn't provide a Linux-specific variable...
-  list(APPEND INPUT_PLATFORM_SOURCES
-    input/EvDevController.cc
-    )
-elseif(WIN32)
-  list(APPEND INPUT_PLATFORM_SOURCES
-    ) # No Windows-specific source files for now...
-endif(UNIX AND NOT APPLE)
 
-add_library(crisp-input STATIC
+# Declare the base source list.
+list(APPEND RoboCRISP_INPUT_SOURCES
   input/Axis.cc
   input/Button.cc
   input/Controller.cc
-  ${INPUT_PLATFORM_SOURCES}
   )
 
-set_property(TARGET crisp-input
-  APPEND PROPERTY INCLUDE_DIRECTORIES ${EVDEV_INCLUDE_DIRS}
-  )
+# Add platform-specific sources here.
+if(UNIX AND NOT APPLE)
+  list(APPEND RoboCRISP_INPUT_SOURCES input/EvDevController.cc)
+endif(UNIX AND NOT APPLE)
 
+# Define the target.
+add_library(crisp-input STATIC ${RoboCRISP_INPUT_SOURCES})
 target_link_libraries(crisp-input
-  ${Boost_SYSTEM_LIBRARY_RELEASE}
-  ${EVDEV_LIBRARIES}
-  )
+  ${Boost_SYSTEM_LIBRARY_RELEASE})
+
+# Set platform-specific properties here.
+if(UNIX AND NOT APPLE)
+  set_property(TARGET crisp-input APPEND PROPERTY "INCLUDE_DIRECTORIES" ${EVDEV_INCLUDE_DIRS})
+  set_property(TARGET crisp-input APPEND PROPERTY "INTERFACE_LINK_LIBRARIES" ${EVDEV_LIBRARIES})
+endif(UNIX AND NOT APPLE)
