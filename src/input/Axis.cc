@@ -19,7 +19,7 @@ namespace crisp
     {
     }
 
-    Axis::Axis(Axis::ID _id, RawConfig _raw)
+    Axis::Axis(RawConfig _raw, Axis::ID _id)
       : BaseType ( _id ),
         type ( Axis::Type::ABSOLUTE ),
         mode ( type ),
@@ -31,7 +31,7 @@ namespace crisp
     }
 
 
-    Axis::Axis(Axis::ID _id, RawConfig _raw, const std::initializer_list<Value>& _coefficients)
+    Axis::Axis(RawConfig _raw, Axis::ID _id, const std::initializer_list<Value>& _coefficients)
       : BaseType ( _id ),
         type ( Axis::Type::ABSOLUTE ),
         mode ( type ),
@@ -151,6 +151,7 @@ namespace crisp
 
       switch ( map_method )
 	{
+        case MapMethod::NONE:
 	case MapMethod::LINEAR:
 	  out = x;
 	  break;

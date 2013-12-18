@@ -88,6 +88,9 @@ namespace crisp
       std::vector<Value> coefficients;
 
 
+      /** Fetch the name of the axis. */
+      virtual const char* get_name() const = 0;
+
       /** Initialize a relative or absolute axis with no pre-set value mapping.
        *
        * @param _type Type of axis; either `Axis::Type::ABSOLUTE` or
@@ -103,7 +106,7 @@ namespace crisp
        *     _initialize_ the axis' "raw" field; i.e. the passed configuration may
        *     be modified post-construction.
        */
-      Axis(ID _id, RawConfig _raw);
+      Axis(RawConfig _raw, ID _id);
 
       /** Initialize an axis with polynomial-expansion mapping.
        *
@@ -118,7 +121,7 @@ namespace crisp
        * 	   the highest power of the input variable, and the last to the zeroth
        * 	   power of the input variable (i.e., to a constant offset).
        */
-      Axis(ID _id, RawConfig _raw, const std::initializer_list<Value>& _coefficients);
+      Axis(RawConfig _raw, ID _id, const std::initializer_list<Value>& _coefficients);
 
       /** Move constructor for efficient construction of an axis from an
        *	Rvalue reference.

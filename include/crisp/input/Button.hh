@@ -25,8 +25,10 @@ namespace crisp
     public:
       Button(ID _id);
       virtual ~Button() = default;
-
       ButtonState map(int32_t raw_value) const;
+
+      /** Fetch the name of the button. */
+      virtual const char* get_name() const = 0;
     };
   }
 }

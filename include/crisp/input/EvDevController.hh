@@ -19,6 +19,21 @@ namespace crisp
 {
   namespace input
   {
+    class EvDevButton : public Button
+    {
+    public:
+      using Button::Button;
+      virtual const char* get_name() const;
+    };
+
+    class EvDevAxis : public Axis
+    {
+    public:
+      using Axis::Axis;
+      virtual const char* get_name() const;
+    };
+
+
     /** Linux `evdev`-based game controller class.
      */
     class EvDevController : public Controller
@@ -26,10 +41,13 @@ namespace crisp
     private:
       int m_fd;
       libevdev* m_evdev;
-      std::unordered_map<std::pair<uint16_t, uint16_t>,size_t>
-        m_axis_map; /**< Mapping from axis type and code to index. */
 
-      /* std::vector<Button> m_buttons; */
+      /** Mapping from axis type and code to index in `axes`. */
+      std::unordered_map<std::pair<uint16_t, uint16_t>,size_t>
+        m_axis_map;
+
+      /** Mapping from button code to index in `buttons`. */
+      std::unordered_map<uint16_t,size_t> m_button_map;
 
       ssize_t
       wait_for_event(struct input_event* e);

@@ -44,8 +44,14 @@ main(int argc, char* argv[])
       if ( axis.type == Axis::Type::ABSOLUTE )
         axis.set_coefficients({ 1, 0, 0, 0 }); /* y = x³ */
       axis.hook([&](const Axis& _axis, Axis::State state)
-		{ fprintf(stderr, "[%2d] raw %8d | mapped %.5f\n", axis.id, state.raw_value, state.value); });
+		{ fprintf(stderr, "[%2d](%s) raw %8d | mapped %.5f\n", axis.id, axis.get_name(), state.raw_value, state.value); });
     }
+  for ( Button& button : controller.buttons )
+    button.hook([&](const Button& _button, Button::State state)
+                { fprintf(stderr, "[%2d](%s) %s\n", button.id, button.get_name(),
+                          state.value == ButtonState::PRESSED
+                          ? "pressed" : "released"); });
+
   std::atomic<bool> run_flag ( true );
   std::thread controller_thread ( [&]() { controller.run(run_flag); });
 
