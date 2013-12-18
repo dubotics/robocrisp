@@ -71,9 +71,6 @@ namespace crisp
     template < typename _U >
     void set(_U _value)
     {
-      fprintf(stderr, "%s\n", __PRETTY_FUNCTION__);
-      fprintf(stderr, "    %zd\n", _value);
-
       if ( ! value )
 	{ data_type = DataDeclaration<_U>();
 	  if ( value && owns_value )
