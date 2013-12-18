@@ -1,6 +1,10 @@
 project(RoboCRISP)
 cmake_minimum_required(VERSION 2.6)
 
+if(COMMAND cmake_policy)
+  cmake_policy(VERSION 2.8.12)
+endif(COMMAND cmake_policy)
+
 ################################################################
 
 set(Boost_USE_MULTITHREADED ON)
@@ -27,6 +31,12 @@ endif(NOT Boost_FOUND)
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 
+# ----------------------------------------------------------------
+
+if(UNIX AND NOT APPLE)          # Assuming Linux.
+  find_package(PkgConfig)
+  pkg_check_modules(EVDEV REQUIRED libevdev)
+endif(UNIX AND NOT APPLE)
 ################################################################
 
 add_definitions(

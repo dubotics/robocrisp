@@ -17,17 +17,30 @@ namespace crisp
     class Axis;
     extern template class MappedEventSource<Axis, int32_t, double>;
 
-    /** An absolute axis on an input device.  Axis supports both the linear
-     *  value-mapping of MappedEventSource, and an arbitrary polynomial-expansion
-     *  mapping with user-supplied polynomial coefficients.
+    /** An axis on an input device.
+     *
+     *  For absolute axes, Axis supports both the linear value-mapping of
+     *  MappedEventSource, and an arbitrary polynomial-expansion mapping with
+     *  user-supplied polynomial coefficients.
      */
     class Axis : public input::MappedEventSource<Axis, int32_t, double>
     {
       typedef MappedEventSource<Axis, int32_t, double> BaseType;
+
     public:
+      using BaseType::ID;
+
+      /** Axis-value reporting style. */
+      enum class Type
+      {
+        ABSOLUTE,               /**< Values are absolute input states. */
+        RELATIVE                /**< Values are relative to the last input state. */
+      };
+
       /** Method used to map a raw axis value to its output value. */
       enum class MapMethod
       {
+        NONE,                   /**< No mapping is done. */
 	LINEAR,			/**< Only the base linear mapping is used. */
 	POLYNOMIAL		/**< After linear mapping, a polynomial
 				   expansion with user-supplied coefficients is
@@ -44,7 +57,23 @@ namespace crisp
 	  deadzone_lower,	/**< Lower deadzone value. */
 	  deadzone_upper;	/**< Upper deadzone value. */
       };
+    public:
+      Type
+        type,                   /**< Hardware reporting style for the axis. */
+        mode;                   /**< Software reporting style for the axis.
+                                   When `mode` is different from `type`, the
+                                   axis will emulate the selected axis type. */
 
+    protected:
+       /**< Last "raw" value for the axis.
+        *
+        * When emulating an absolute axis, this will contain the most recent
+        * _emulated_ absolute raw value; when emulating a relative axis, it will
+        * contain the most recent _hardware-reported_ absolute raw value.
+        */
+      RawValue m_last_raw_value;
+
+    public:
       MapMethod map_method;	/**< Kind of value-mapping selected for this axis. */
       RawConfig raw;		/**< Raw-value mapping configuration. */
 
@@ -59,13 +88,25 @@ namespace crisp
       std::vector<Value> coefficients;
 
 
-      /** Initialize an axis with linear mapping only.
+      /** Fetch the name of the axis. */
+      virtual const char* get_name() const = 0;
+
+      /** Initialize a relative or absolute axis with no pre-set value mapping.
+       *
+       * @param _type Type of axis; either `Axis::Type::ABSOLUTE` or
+       *     `Axis::Type::RELATIVE`.
+       *
+       * @param _id Implementation- and hardware-specific ID code for the axis.
+       */
+      Axis(Type _type, ID _id);
+
+      /** Initialize an absolute axis with linear mapping only.
        *
        * @param _raw Raw-value mapping configuration.  This structure is used to
        *     _initialize_ the axis' "raw" field; i.e. the passed configuration may
        *     be modified post-construction.
        */
-      Axis(ID _id, RawConfig _raw);
+      Axis(RawConfig _raw, ID _id);
 
       /** Initialize an axis with polynomial-expansion mapping.
        *
@@ -80,7 +121,7 @@ namespace crisp
        * 	   the highest power of the input variable, and the last to the zeroth
        * 	   power of the input variable (i.e., to a constant offset).
        */
-      Axis(ID _id, RawConfig _raw, const std::initializer_list<Value>& _coefficients);
+      Axis(RawConfig _raw, ID _id, const std::initializer_list<Value>& _coefficients);
 
       /** Move constructor for efficient construction of an axis from an
        *	Rvalue reference.
@@ -119,6 +160,12 @@ namespace crisp
        * @return A value mapped onto the output space from linear space. 
        */
       Value map(Value linear_value) const;
+
+
+      /* override the MappedEventSource method to allow for emulating a
+         different axis type and for value-map type "none" */
+      void
+      post(RawValue raw);
 
 
       /**@name Deleted constructors.

@@ -3,25 +3,51 @@
 
 #include <system_error>
 #include <unordered_map>
-
+#include <libevdev/libevdev.h>
 #include <crisp/input/Controller.hh>
+
+namespace std
+{
+  template <> struct hash<std::pair<uint16_t,uint16_t> >
+  {
+    inline constexpr size_t operator()(const std::pair<uint16_t,uint16_t>& p) const noexcept
+    { return ((p.first << 16) | p.second); }
+  };
+}
 
 namespace crisp
 {
   namespace input
   {
+    class EvDevButton : public Button
+    {
+    public:
+      using Button::Button;
+      virtual const char* get_name() const;
+    };
+
+    class EvDevAxis : public Axis
+    {
+    public:
+      using Axis::Axis;
+      virtual const char* get_name() const;
+    };
+
+
     /** Linux `evdev`-based game controller class.
      */
     class EvDevController : public Controller
     {
     private:
       int m_fd;
-      std::unordered_map<uint16_t,size_t> m_axis_map; /**< Mapping from axis code to index. */
-      /* std::vector<Button> m_buttons; */
-      char
-      *m_name,
-	*m_location,
-	*m_identifier;
+      libevdev* m_evdev;
+
+      /** Mapping from axis type and code to index in `axes`. */
+      std::unordered_map<std::pair<uint16_t, uint16_t>,size_t>
+        m_axis_map;
+
+      /** Mapping from button code to index in `buttons`. */
+      std::unordered_map<uint16_t,size_t> m_button_map;
 
       ssize_t
       wait_for_event(struct input_event* e);
@@ -40,14 +66,6 @@ namespace crisp
        *  blocks execution.
        */
       virtual void run(const std::atomic<bool>& run_flag);
-
-      /** Public, read-only accessors for private state variables.
-       *@{
-       */
-      const char*& name;
-      const char*& location;
-      const char*& identifier;
-      /**@}*/
     };
   }
 }

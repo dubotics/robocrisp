@@ -3,22 +3,24 @@
 
 #include <vector>
 #include <atomic>
+#include <memory>
 
 #include <crisp/util/ArrayAccessor.hh>
 #include <crisp/input/Axis.hh>
+#include <crisp/input/Button.hh>
 
 namespace crisp
 {
   namespace input
   {
-    /** Linux `evdev`-based game controller class.
-     *
-     * This is mostly just a collection of axes right now; needs some 
+    /** Generic controller class.  This has pure-virtual method(s) and cannot be
+        used directly; see e.g. EvDevController for an implementation.
      */
     class Controller
     {
     protected:
-      std::vector<Axis> m_axes;
+      std::vector<std::shared_ptr<Axis> > m_axes;
+      std::vector<std::shared_ptr<Button> > m_buttons;
 
     public:
       Controller();
@@ -32,7 +34,8 @@ namespace crisp
        */
       virtual void run(const std::atomic<bool>& run_flag) = 0;
 
-      ArrayAccessor<Axis> axes;
+      DereferencedArrayAccessor<Axis,std::shared_ptr<Axis> > axes;
+      DereferencedArrayAccessor<Button,std::shared_ptr<Button> > buttons;
     };
   }
 }
