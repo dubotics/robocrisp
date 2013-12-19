@@ -10,11 +10,11 @@ namespace crisp
   {
     namespace detail
     {
-      template < typename _Node, typename _BodyType >
-      static typename std::enable_if<std::is_void<_BodyType>::value, void>::type
+      template < typename _Node, typename _Body >
+      static typename std::enable_if<std::is_void<_Body>::value, void>::type
       call_handler(_Node& node,
                    MessageDirection direction,
-                   MessageHandler<_Node, _BodyType>& handler)
+                   MessageHandler<_Node, _Body>& handler)
       {
         switch ( direction )
           {
@@ -30,11 +30,11 @@ namespace crisp
       }
 
 
-      template < typename _Node, typename _BodyType >
-      static typename std::enable_if<std::is_same<_BodyType, Message>::value, void>::type
+      template < typename _Node, typename _Body >
+      static typename std::enable_if<std::is_same<_Body, Message>::value, void>::type
       call_handler(_Node& node,
                    const Message& m, MessageDirection direction,
-                   MessageHandler<_Node, _BodyType>& handler)
+                   MessageHandler<_Node, _Body>& handler)
       {
         switch ( direction )
           {
@@ -50,14 +50,14 @@ namespace crisp
       }
 
 
-      template < typename _Node, typename _BodyType, typename... Args >
-      static typename std::enable_if<!(std::is_void<_BodyType>::value||std::is_same<_BodyType, Message>::value), void>::type
+      template < typename _Node, typename _Body, typename... Args >
+      static typename std::enable_if<!(std::is_void<_Body>::value||std::is_same<_Body, Message>::value), void>::type
       call_handler(_Node& node,
                    const Message& m, MessageDirection direction,
-                   MessageHandler<_Node, _BodyType>& handler,
+                   MessageHandler<_Node, _Body>& handler,
                    const Args&... args)
       {
-        _BodyType value ( m.as<_BodyType>(args...) );
+        _Body value ( m.as<_Body>(args...) );
 
         switch ( direction )
           {
