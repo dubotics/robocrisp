@@ -78,6 +78,21 @@ namespace crisp
        */
       virtual ~Signal();
       
+      /** Set a signal to invoke callbacks via the given Boost.Asio
+       *  `io_service`.
+       *
+       * @param service Reference to the io_service to which signal handlers
+       *     should be posted.
+       */
+      void set_io_service(boost::asio::io_service& service);
+
+
+      /** Set the signal to invoke callbacks in a blocking manner.  If an
+       * `io_service` was previously set on the signal (via constructor or
+       *  `set_io_service`), the internal pointer will be cleared.
+       */
+      void clear_io_service();
+
       /** Add a function to be called on signal emission.
        *
        * @param function Function to call.

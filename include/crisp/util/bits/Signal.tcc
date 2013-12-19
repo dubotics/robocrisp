@@ -30,6 +30,18 @@ namespace crisp
     Signal<Return(Args...)>::~Signal()
     {}
 
+
+    template < typename Return, typename... Args >
+    void
+    Signal<Return(Args...)>::use_io_service(boost::asio::io_service& service)
+    { m_io_service = &service; }
+
+    template < typename Return, typename... Args >
+    void
+    Signal<Return(Args...)>::clear_io_service()
+    { m_io_service = nullptr; }
+
+
     template < typename Return, typename... Args >
     void
     Signal<Return(Args...)>::emit(Args... args)
