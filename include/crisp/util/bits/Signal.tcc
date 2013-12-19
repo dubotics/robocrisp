@@ -101,7 +101,7 @@ namespace crisp
     Signal<Return(Args...)>::clear()
     {
       std::unique_lock<std::mutex> lock ( m_mutex );
-      m_actions.clear(action.lock());
+      m_actions.clear();
     }
 
     template < typename Return, typename... Args >
