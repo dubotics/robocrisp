@@ -60,6 +60,14 @@ namespace crisp
       virtual ~WorkerObject();
 
 
+      /** Fetch a reference to the `io_service` for which the object does work.
+       *
+       * @return The object's internal `io_service` reference.
+       */
+      boost::asio::io_service&
+      get_io_service();
+
+
       /** Launch the object's worker threads.
        *
        * @return `true` if the threads were launched, and `false` if they were already running.

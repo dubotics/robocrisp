@@ -17,6 +17,7 @@ namespace crisp
         thread.join();
     }
 
+
     bool
     WorkerObject::WorkerThread::launch(boost::asio::io_service& service)
     {
@@ -53,6 +54,10 @@ namespace crisp
     {
       halt();
     }
+
+    boost::asio::io_service&
+    WorkerObject::get_io_service()
+    { return m_io_service; }
 
     bool
     WorkerObject::launch()
