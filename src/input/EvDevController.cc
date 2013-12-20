@@ -6,28 +6,10 @@ namespace crisp
 {
   namespace input
   {
-    EvDevButton::EvDevButton(EvDevController& _controller, Button::ID _id)
-      : Button(_id),
-        m_controller ( _controller )
-    {}
-
     const char* EvDevButton::get_name() const
     {
       return libevdev_event_code_get_name(EV_KEY, id);
     }
-
-    EvDevAxis::EvDevAxis(EvDevController& _controller,
-                         Axis::Type _type, Axis::ID _id)
-      : Axis(_type, _id),
-        m_controller ( _controller )
-    {}
-
-    EvDevAxis::EvDevAxis(EvDevController& _controller,
-                         Axis::RawConfig _raw, Axis::ID _id)
-      : Axis(_raw, _id),
-        m_controller ( _controller )
-    {}
-
 
     const char* EvDevAxis::get_name() const
     {
@@ -90,10 +72,10 @@ namespace crisp
                 {
                   struct input_absinfo& info ( _axes[i].absinfo );
                   Axis::RawConfig raw { info.value, info.minimum, info.maximum,  info.flat, info.flat };
-                  m_axes.emplace_back(std::make_shared<EvDevAxis>(*this, raw, _axes[i].code));
+                  m_axes.emplace_back(std::make_shared<EvDevAxis>(raw, _axes[i].code));
                 }
               else
-                m_axes.emplace_back(std::make_shared<EvDevAxis>(*this, Axis::Type::RELATIVE, _axes[i].code));
+                m_axes.emplace_back(std::make_shared<EvDevAxis>(Axis::Type::RELATIVE, _axes[i].code));
 
               m_axis_map.emplace(std::make_pair(_axes[i].type, _axes[i].code), i);
 	    }
@@ -111,7 +93,7 @@ namespace crisp
               m_buttons.reserve(num_buttons);
               for ( size_t i = 0; i < num_buttons; ++i )
                 {
-                  m_buttons.emplace_back(std::make_shared<EvDevButton>(*this, _buttons[i]));
+                  m_buttons.emplace_back(std::make_shared<EvDevButton>(_buttons[i]));
                   m_button_map.emplace(std::make_pair(_buttons[i], i));
                 }
             }
