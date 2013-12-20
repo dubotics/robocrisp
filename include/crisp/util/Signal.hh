@@ -17,16 +17,25 @@ namespace crisp
 {
   namespace util
   {
+#ifndef CRISP_GENERATING_DOCUMENTATION
     /* This declaration lets us declare Signal using a function-like template
      * parameter.
      */
+    /**@internal */
     template < typename >
     class Signal;
+#endif
 
-    /** Light-weight event-source and callback handler.
+    /** Light-weight event-source and callback handler.  A signal object may be
+     * used to invoke a user-configurable set of event handlers, each of which
+     * will receive the arguments passed to the signal's `emit` method.
      *
      * Unlike Boost.Signals (1 or 2), Signal provides no "combiner" interface,
      * i.e. handler return values are ignored.
+     *
+     * @tparam Return Return-type for handler functions.
+     *
+     * @tparam Args Argument-types for arguments to handler functions.
      * 
      */
     template < typename Return, typename... Args >

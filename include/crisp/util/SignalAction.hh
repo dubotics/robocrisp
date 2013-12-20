@@ -1,8 +1,8 @@
 /** @file
  *
  * Defines a generic user-callback management utility class for use with
- * crisp::util::Signal a light-weight signal emitter for asynchronous event
- * notification and callback invocation.
+ * crisp::util::Signal.
+ *
  */
 #ifndef crisp_util_SignalAction_hh
 #define crisp_util_SignalAction_hh 1
@@ -14,15 +14,19 @@ namespace crisp
 {
   namespace util
   {
+#ifndef CRISP_GENERATING_DOCUMENTATION
     /* Forward declaration. */
+    /**@internal */
     template < typename >
     class Signal;
 
     /* This declaration lets us declare SignalAction using a function-like
      * template parameter.
      */
+    /**@internal */
     template < typename >
     class SignalAction;
+#endif
 
     /** User-callback manager for crisp::util::Signal.  A pointer to a
      *  SignalAction can be used to permanently disable (via `cancel`) the
