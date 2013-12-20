@@ -3,3 +3,6 @@ build
 
 # Ignore all those pesky pre-revision-control *~ backup files.
 *~
+
+# ...generated HTML documentation.
+doc/html
