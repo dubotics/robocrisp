@@ -33,7 +33,7 @@ namespace crisp
 
     template < typename Return, typename... Args >
     void
-    Signal<Return(Args...)>::use_io_service(boost::asio::io_service& service)
+    Signal<Return(Args...)>::set_io_service(boost::asio::io_service& service)
     { m_io_service = &service; }
 
     template < typename Return, typename... Args >
