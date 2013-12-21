@@ -22,6 +22,7 @@ add_library(crisp-comms STATIC
   comms/Buffer.cc
   comms/Configuration.cc
   comms/DataDeclaration.cc
+  comms/DataStructure.cc
   comms/DataValue.cc
   comms/Handshake.cc
   comms/Message.cc

@@ -11,6 +11,10 @@ target_link_libraries(live-test
 add_executable(transcoder-test transcoder-test.cc)
 target_link_libraries(transcoder-test crisp-comms crisp-util)
 
+# Data-structure test.
+add_executable(structure-test structure-test.cc)
+target_link_libraries(structure-test crisp-comms crisp-util)
+
 # Basic controller test.
 add_executable(controller-test controller-test.cc)
 set_property(TARGET controller-test
