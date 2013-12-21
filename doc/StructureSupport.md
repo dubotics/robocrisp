@@ -1,5 +1,9 @@
 # Data-Structure Support:  Planning Document
-Time-stamp: "2013 Dec 21 14:32:58 PST"
+Time-stamp: "2013 Dec 21 14:45:21 PST"
+
+This document describes the "what"s, "why"s, and "how"s of the efforts to add support for arbitrary
+data structures to the RoboCRISP transport mechanism.  Its primary purpose is to offload the
+author's plans and ideas for this sub-project into a less-volatile storage medium.
 
 ## Background and Motivation
 
