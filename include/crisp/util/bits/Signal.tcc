@@ -24,11 +24,29 @@ namespace crisp
     Signal<Return(Args...)>::Signal(Signal&& sig)
     : m_actions ( std::move(sig.m_actions) ),
       m_io_service ( sig.m_io_service )
+
+    template < typename Return, typename... Args >
+    Signal<Return(Args...)>::Signal(const Signal& sig)
+    : m_actions ( sig.m_actions ),
+      m_io_service ( sig.m_io_service ),
+      m_mutex ( )
     {}
+
 
     template < typename Return, typename... Args >
     Signal<Return(Args...)>::~Signal()
     {}
+
+
+    template < typename Return, typename... Args >
+    Signal<Return(Args...)>&
+    Signal<Return(Args...)>::operator =(const Signal<Return(Args...)>& sig)
+    {
+      std::unique_lock<std::mutex> lock ( const_cast<std::mutex&>(sig.m_mutex) );
+      m_actions = sig.m_actions;
+      m_io_service = sig.m_io_service;
+      return *this;
+    }
 
 
     template < typename Return, typename... Args >

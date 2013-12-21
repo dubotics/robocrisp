@@ -71,9 +71,14 @@ namespace crisp
        */
       Signal();
 
-      /** Move constructor.
-       */
+      /** Move constructor. */
       Signal(Signal&& sig);
+
+      /** Copy constructor. */
+      Signal(const Signal& sig);
+
+      Signal&
+      operator =(const Signal& sig);
 
       /** Set up a signal to invoke callbacks via a Boost.Asio `io_service`.
        *
