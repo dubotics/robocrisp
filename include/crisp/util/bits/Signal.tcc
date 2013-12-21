@@ -17,13 +17,16 @@ namespace crisp
     template < typename Return, typename... Args >
     Signal<Return(Args...)>::Signal()
       : m_actions ( ),
-        m_io_service ( nullptr )
+        m_io_service ( nullptr ),
+        m_mutex ( )
     {}
 
     template < typename Return, typename... Args >
     Signal<Return(Args...)>::Signal(Signal&& sig)
     : m_actions ( std::move(sig.m_actions) ),
-      m_io_service ( sig.m_io_service )
+      m_io_service ( sig.m_io_service ),
+      m_mutex ( )
+    {}
 
     template < typename Return, typename... Args >
     Signal<Return(Args...)>::Signal(const Signal& sig)
