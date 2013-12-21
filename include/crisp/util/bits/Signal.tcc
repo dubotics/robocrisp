@@ -67,6 +67,9 @@ namespace crisp
     void
     Signal<Return(Args...)>::emit(Args... args)
     {
+      if ( m_actions.empty() )
+        return;
+
       /* For thread safety and to enable concurrency, we acquire a lock on the
          mutex only for long enough to copy the action list (it's a bunch of
          pointers, so copy efficiency should be a non-issue). */
