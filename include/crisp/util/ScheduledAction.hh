@@ -34,12 +34,14 @@ namespace crisp
       friend class Scheduler;
       friend class std::hash<ScheduledAction>;
 
-#if defined(__LIBCPP_VERSION)
+#if defined(_LIBCPP_VERSION)
       template < typename _A, typename _B, unsigned>
       friend class std::__1::__libcpp_compressed_pair_imp;
-#elif defined(__GNUC__)
+#elif defined(__GLIBCXX__)
       template < typename _Tp >
       friend class __gnu_cxx::new_allocator;
+#else
+# error Unable to determine C++ standard library implementation.
 #endif
 
       ScheduledAction(Scheduler& scheduler, Function function);
