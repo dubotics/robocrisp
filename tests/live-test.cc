@@ -1,7 +1,6 @@
 /** @file
  *
- * Proof-of-concept for using Boost.Asio's "stackful coroutines" to simplify
- * message I/O.
+ * Simple example of setting up a protocol node in either server or client mode.
  *
  */
 #include <cstdio>
