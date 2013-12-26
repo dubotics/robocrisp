@@ -71,6 +71,26 @@ namespace crisp
       return can_launch;
     }
       
+    bool
+    WorkerObject::running(bool all) const
+    {
+      if ( all )
+        {
+          for ( const WorkerThread& worker : m_worker_threads )
+            if ( ! worker.thread.joinable() )
+              return false;
+          return true;
+        }
+      else
+        {
+          for ( const WorkerThread& worker : m_worker_threads )
+            if ( worker.thread.joinable() )
+              return true;
+          return false;
+        }
+    }
+
+
     bool WorkerObject::can_halt() const
     {
       for ( const WorkerThread& worker : m_worker_threads )

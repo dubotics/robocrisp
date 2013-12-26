@@ -18,4 +18,8 @@
 
 #define SYNC_INTERVAL 1
 
+/** How long after a message-handler signal emission we should wait before
+    freeing the message-body object. */
+#define MESSAGE_HANDLER_SIGNAL_FREE_DELAY 1
+
 #endif	/* config_h */

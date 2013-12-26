@@ -144,21 +144,19 @@ main(int argc, char* argv[])
 	  /* We're connected.  Set up a protocol node on the socket. */
 	  Node node ( std::move(socket), NodeRole::MASTER );
 
-	  node.dispatcher.configuration_response.received =
-	    [&](Node& _node, const Configuration& config)
-	    {
-              _node.configuration = config;
-
-              fprintf(stderr, "Got configuration:\n");
-              for ( const Module& module : config.modules )
-                {
-                  fprintf(stderr, "    module \"%s\"\n", module.name);
-                  for ( const ModuleInput<>& input : module.inputs )
-                    fprintf(stderr, "        input \"%s\" (%s)\n", input.name, input.data_type.type_name());
-                  for ( const Sensor<>& sensor : module.sensors )
-                    fprintf(stderr, "       sensor \"%s\" (%s)\n", sensor.name, sensor.data_type.type_name());
-                }
-	    };
+	  node.dispatcher.configuration_response.received
+            .connect([&](Node& _node, const Configuration& config)
+                     {
+                       fprintf(stderr, "Got configuration:\n");
+                       for ( const Module& module : config.modules )
+                         {
+                           fprintf(stderr, "    module \"%s\"\n", module.name);
+                           for ( const ModuleInput<>& input : module.inputs )
+                             fprintf(stderr, "        input \"%s\" (%s)\n", input.name, input.data_type.type_name());
+                           for ( const Sensor<>& sensor : module.sensors )
+                             fprintf(stderr, "       sensor \"%s\" (%s)\n", sensor.name, sensor.data_type.type_name());
+                         }
+                     });
 
           node.send(MessageType::CONFIGURATION_QUERY);
 

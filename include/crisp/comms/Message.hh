@@ -176,6 +176,12 @@ namespace crisp
                                   * checksum field itself).
                                   */
   };
+
+   template<>
+   inline Message
+   Message::as<Message>() const
+   { return *this; }
+
   }
 }
 

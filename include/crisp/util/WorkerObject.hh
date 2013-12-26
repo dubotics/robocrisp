@@ -76,6 +76,18 @@ namespace crisp
       launch();
 
 
+      /** Check if worker threads are running.
+       *
+       * @param all When `true`, requests that the function return `true` only
+       *   when _all_ allocated worker threads are running; otherwise returns
+       *   `true` when _any_ allocated worker thread is running.
+       *
+       * @return A value indicating if any (when `all` is `false`) or all (when
+       *   `all` is `true`) allocated worker threads are running.
+       */
+      bool
+      running(bool all = false) const;
+
       /** Check if the worker pool can be halted from the calling thread.
        *
        * @return `true` if the calling thread is not one of the worker threads.
