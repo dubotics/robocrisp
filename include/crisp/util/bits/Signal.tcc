@@ -2,11 +2,36 @@
 #ifndef crisp_util_bits_Signal_tcc
 #define crisp_util_bits_Signal_tcc 1
 
+#include <type_traits>
+#include <functional>
 
 namespace crisp
 {
   namespace util
   {
+    template < typename _Tp >
+    typename std::enable_if<std::is_reference<_Tp>::value && ! std::is_const<typename std::remove_reference<_Tp>::type>::value,
+                            std::reference_wrapper<typename std::remove_reference<_Tp>::type> >::type
+    forward_for_bind(_Tp arg)
+    {
+      return std::ref(arg);
+    }
+
+    template < typename _Tp >
+    typename std::enable_if<std::is_reference<_Tp>::value && std::is_const<typename std::remove_reference<_Tp>::type>::value,
+                            std::reference_wrapper<typename std::remove_reference<_Tp>::type> >::type
+    forward_for_bind(_Tp arg)
+    {
+      return std::cref(arg);
+    }
+
+    template < typename _Tp >
+    typename std::enable_if<!std::is_reference<_Tp>::value,_Tp>::type
+    forward_for_bind(_Tp arg)
+    {
+      return arg;
+    }
+
     template < typename Return, typename... Args >
     Signal<Return(Args...)>::Signal(boost::asio::io_service& service)
       : m_actions ( ),
@@ -100,7 +125,7 @@ namespace crisp
             {
               std::shared_ptr<Action> action ( actions[j].lock() );
               if ( action )
-                m_io_service->post(std::bind(action->m_function, std::ref(args)...));
+                m_io_service->post(std::bind(action->m_function, forward_for_bind(args)...));
             }
         }
       else
