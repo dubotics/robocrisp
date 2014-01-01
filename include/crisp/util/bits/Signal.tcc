@@ -26,7 +26,15 @@ namespace crisp
     }
 
     template < typename _Tp >
-    typename std::enable_if<!std::is_reference<_Tp>::value,_Tp>::type
+    typename std::enable_if<!std::is_copy_constructible<_Tp>::value,
+                            std::reference_wrapper<_Tp> >::type
+    forward_for_bind(_Tp& arg)
+    {
+      return std::ref(arg);
+    }
+
+    template < typename _Tp >
+    typename std::enable_if<std::is_copy_constructible<_Tp>::value,_Tp>::type
     forward_for_bind(_Tp arg)
     {
       return arg;
