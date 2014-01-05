@@ -2,13 +2,14 @@
  *
  * Declares template class BasicNode, which provides a Message-passing utility for IP protocols
  * based on Boost.Asio.
+ *
+ * See the note on BasicNode for instantiation information.
  */
 #ifndef crisp_comms_BasicNode_hh
 #define crisp_comms_BasicNode_hh 1
 
 
 #include <crisp/comms/Configuration.hh>
-#include <crisp/comms/Handshake.hh>
 #include <crisp/comms/Message.hh>
 #include <crisp/comms/MessageDispatcher.hh>
 #include <crisp/comms/common.hh>
@@ -16,15 +17,10 @@
 #include <crisp/util/Scheduler.hh>
 #include <crisp/util/WorkerObject.hh>
 #include <crisp/util/SharedQueue.hh>
-#include <crisp/util/Buffer.hh>
 
 #include <boost/asio/io_service.hpp>
-#include <boost/asio/streambuf.hpp>
-#include <boost/asio/buffer.hpp>
-#include <boost/asio/write.hpp>
-#include <boost/asio/read.hpp>
-#include <boost/asio/read_until.hpp>
 #include <boost/asio/spawn.hpp>
+#include <boost/asio/ip/tcp.hpp>
 
 #include <thread>
 
@@ -34,6 +30,15 @@ namespace crisp
   {
 
     /** Basic Message node for use with Boost.Asio and IP-based protocols.
+     *
+     * @note By default, this template's implementation header is not included;
+     * `extern template` declarations are used instead to reduce compile
+     * overhead.  If you need a BasicNode instantiation that does *not* match
+     * `BasicNode<boost::asio::ip::tcp>`, you must
+     *
+     *    #include <crisp/comms/bits/BasicNode.tcc>
+     *
+     * prior to the place of instantiation.
      */
     template < typename _Protocol >
     class BasicNode : protected crisp::util::WorkerObject
@@ -102,68 +107,21 @@ namespace crisp
        * @param _role Role to request when performing the initial handshake with the remote
        *     node.
        */
-      BasicNode(Socket&& _socket, NodeRole _role)
-        : WorkerObject ( _socket.get_io_service(), 5 ),
-          m_socket ( std::move(_socket) ),
-          m_sync_action ( ),
-          m_halt_action ( ),
-          m_outgoing_queue ( ),
-          m_halting ( ),
-          m_stopped ( false ),
-          m_halt_mutex ( ),
-          m_halt_cv ( ),
-          stopped ( m_stopped ),
-          scheduler ( m_io_service ),
-          role ( _role ),
-          configuration ( ),
-          dispatcher ( *this )
-      {
-        m_halting.clear();
-      }
+      BasicNode(Socket&& _socket, NodeRole _role);
 
-      ~BasicNode()
-      {
-        halt(true);
-      }
+      virtual ~BasicNode();
+
+      /** Launch the node's worker threads, and wait for a call to halt() from
+          any other thread. (i.e., blocks until another thread calls `halt`.) */
+      void run();
 
 
-      void run()
-      {
-        launch();
-        std::unique_lock<std::mutex> lock ( m_halt_mutex );
-        m_halt_cv.wait(lock);
-
-        if ( ! stopped )
-          halt();
-      }
-
-      /** Launch worker threads to handle the node's IO. */
+      /** Launch worker threads to handle the node's IO.
+       *
+       * @return `false` if already running, and `true` otherwise.
+       */
       bool
-      launch()
-      {
-        if ( running() )
-          return false;
-
-        WorkerObject::launch();
-
-        boost::asio::spawn(m_io_service, std::bind(&BasicNode::receive_loop, this,
-                                                   std::placeholders::_1));
-        boost::asio::spawn(m_io_service, std::bind(&BasicNode::send_loop, this,
-                                                   std::placeholders::_1));
-
-        send(Handshake { PROTOCOL_VERSION, role });
-
-        /* The default `handshake_response.received` handler will cancel this
-           action on successful handshake sequence. */
-        m_halt_action =
-          scheduler.set_timer(std::chrono::seconds(5),
-                              [this](crisp::util::ScheduledAction&)
-                              { fprintf(stderr, "[0x%x] Handshake not completed before timer expired.  Halting.\n",
-                                        THREAD_ID);
-                                halt(); });
-
-        return true;
-      }
+      launch();
 
 
       /** Halt the node by closing the socket and waiting for its worker threads to finish.
@@ -175,228 +133,46 @@ namespace crisp
        *     from the wrong thread or the node was already halted.
        */
       bool
-      halt(bool force_try = false)
-      {
-        if ( ! m_halting.test_and_set() )
-          {
-            m_stopped = true;
+      halt(bool force_try = false);
 
-            if ( ! can_halt() && ! force_try )
-              {               /* Can't halt from this thread. */
-                m_stopped = false;
-                m_halting.clear();
-
-                std::unique_lock<std::mutex> lock ( m_halt_mutex );
-                m_halt_cv.notify_all();
-
-                return false;
-              }
-
-            fprintf(stderr, "[0x%x] Halting... ", THREAD_ID);
-
-            if ( ! m_sync_action.expired() )
-              m_sync_action.lock()->cancel();
-
-            if ( ! m_halt_action.expired() )
-              m_halt_action.lock()->cancel();
-
-            m_sync_action.reset();
-            m_halt_action.reset();
-
-            m_socket.close();
-            m_outgoing_queue.wake_all();
-
-            m_io_service.poll();
-
-            WorkerObject::halt();
-
-            fprintf(stderr, "done.\n");
-            m_halt_cv.notify_all();
-            return true;
-          }
-        else
-          return false;
-      }
 
       /** Enqueue an outgoing message.  The message will be sent once all previously-queued outgoing
        * messages have been sent.
        *
        * @param m Message to send.
        */
-      void send(const Message& m)
-      {
-        m_outgoing_queue.push(m);
-      }
+      void send(const Message& m);
+
 
       /** Enqueue an outgoing message.  The message will be sent once all previously-queued outgoing
        * messages have been sent.
        *
        * @param m Message to send.
        */
-      void send(Message&& m)
-      {
-        m_outgoing_queue.emplace(std::move(m));
-      }
+      void send(Message&& m);
 
+    protected:
       /** Send outgoing messages until the socket is closed.
        *
        * @param yield A Boost.Asio `yield_context`, used to enable resuming of this method from
        *     asynchronous IO-completion handlers.
        */
-      void send_loop(boost::asio::yield_context yield)
-      {
-        bool aborted ( false );
-
-        fprintf(stderr, "[0x%x] Entered send loop.\n", THREAD_ID);
-        while ( ! m_stopped )
-          {
-            /* Fetch the next message to send, waiting if necessary. */
-            Message message ( m_outgoing_queue.next(&aborted) );
-
-            if ( aborted || m_stopped )
-              break;
-            else
-              m_halting.clear();
-
-            /* Encode it. */
-            MemoryEncodeBuffer meb ( message.get_encoded_size() );
-            EncodeResult er;
-            if ( (er = message.encode(meb)) != EncodeResult::SUCCESS )
-              { fprintf(stderr, "error encoding message: %s.\n", encode_result_to_string(er));
-                continue; }
-
-            /* Dump the message contents. */
-            /* for ( size_t i = 0; i < meb.offset; ++i )
-             *   fprintf(stderr, " %02hhX", meb.data[i]);
-             * fputs("\n", stderr); */
-
-            boost::system::error_code ec;
-            boost::asio::async_write(m_socket, boost::asio::buffer(meb.data, meb.offset), yield[ec]);
-
-            if ( ec )
-              {
-                if ( ec.value() != boost::asio::error::in_progress &&
-                     ec.value() != boost::asio::error::try_again &&
-                     ec.value() != boost::asio::error::operation_aborted )
-                  {
-                    fprintf(stderr, "error writing message: %s\n", strerror(ec.value()));
-                  }
-                break;
-              }
-
-            if ( ! stopped )
-              {
-                if ( ! ec  )    /* Dispatch the 'sent' handlers. */
-                  dispatcher.dispatch(message, MessageDirection::OUTGOING);
-                else            /* Reinsert the message for another go later. */
-                  m_outgoing_queue.emplace(std::move(message));
-              }
-          }
-        fprintf(stderr, "[0x%x] Exiting send loop.\n", THREAD_ID);
-
-        m_io_service.post(std::bind(&BasicNode::halt, this, false));
-      }
+      void send_loop(boost::asio::yield_context yield);
 
 
       /** Read data from the socket until we find a valid sync message. */
-      bool
-      resync(boost::asio::yield_context& yield)
-      {
-        constexpr const char* sync_string = "\x04\x00\x02\x53\x59\x4E\x43";
-        char buf[strlen(sync_string)];
+      bool resync(boost::asio::yield_context& yield);
 
-        boost::system::error_code ec;
-        boost::asio::streambuf read_buf;
-        boost::asio::async_read_until(m_socket, read_buf, sync_string, yield[ec]);
-
-        if ( ec )
-          fprintf(stderr, "resync: read_until failed: %s\n", strerror(ec.value()));
-
-        return ! static_cast<bool>(ec);
-      }
 
       /** Read incoming messages and insert them into the incoming-message queue.
        *
        * @param yield A Boost.Asio `yield_context`, used to enable resuming of this method from
        *     asynchronous IO-completion handlers.
        */
-      void
-      receive_loop(boost::asio::yield_context yield)
-      {
-        fprintf(stderr, "[0x%x] Entered receive loop.\n", THREAD_ID);
-
-        crisp::util::Buffer rdbuf ( BUFSIZ );
-
-        while ( ! stopped )
-          {
-            Message m;
-            boost::system::error_code ec;
-
-            /* Read the header. */
-            boost::asio::async_read(m_socket,
-                                    boost::asio::buffer(&m.header, sizeof(m.header)),
-                                    boost::asio::transfer_exactly(sizeof(m.header)),
-                                    yield[ec]);
-            if ( ec )
-              {
-                if ( ec.value() != boost::asio::error::operation_aborted )
-                  fprintf(stderr, "error reading message header: %s\n", strerror(ec.value()));
-                break;
-              }
-
-
-            /* Make sure our buffer is big enough. */
-            size_t encoded_size ( m.get_encoded_size() );
-            if ( rdbuf.length < encoded_size )
-              rdbuf.resize(encoded_size);
-
-            /* Copy the header data into the read buffer to make monolithic decoding easier
-               later. */
-            memcpy(rdbuf.data, &m.header, sizeof(m.header));
-
-            /* Read the message body (and possibly checksum as well) if necessary. */
-            const detail::MessageTypeInfo& mti ( detail::get_type_info(m.header.type) );
-            if ( mti.has_body )
-              {
-                size_t 
-                  n  = boost::asio::async_read(m_socket,
-                                               boost::asio::buffer(rdbuf.data + sizeof(m.header),
-                                                                   m.header.length),
-                                               boost::asio::transfer_exactly(m.header.length),
-                                               yield[ec]);
-                if ( ec )
-                  {
-                    if ( ec.value() != boost::asio::error::operation_aborted )
-                      fprintf(stderr, "error reading message body: %s\n", strerror(ec.value()));
-                    break;
-                  }
-                else
-                  assert(n == m.header.length);
-              }
-
-            /* Decode the message. */
-            DecodeBuffer db ( rdbuf.data, rdbuf.length );
-
-            /* Dump the message contents. */
-            /* for ( size_t i = sizeof(m.header); i < sizeof(m.header) + m.header.length; ++i )
-             *   fprintf(stderr, " %02hhX", mdata[i]);
-             * fputs("\n", stderr); */
-
-            m = Message::decode(db);
-
-            if ( mti.has_checksum && ! m.checksum_ok() )
-              {
-                if ( ! resync(yield) )
-                  break;
-              }
-            else
-              dispatcher.dispatch(m, MessageDirection::INCOMING);
-          }
-        fprintf(stderr, "[0x%x] Exiting receive loop.\n", THREAD_ID);
-
-        m_io_service.post(std::bind(&BasicNode::halt, this, false));
-      }
+      void receive_loop(boost::asio::yield_context yield);
     };
+
+    extern template class BasicNode<boost::asio::ip::tcp>;
   }
 }
 

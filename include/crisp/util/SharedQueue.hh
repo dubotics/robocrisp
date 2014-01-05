@@ -10,6 +10,8 @@
 #include <mutex>
 #include <queue>
 #include <thread>
+#include <pthread.h>
+#include <csignal>
 
 namespace crisp
 {

@@ -19,6 +19,7 @@ target_link_libraries(crisp-util
 ################################################################
 # Comms library
 add_library(crisp-comms STATIC
+  comms/BasicNode.cc
   comms/Buffer.cc
   comms/Configuration.cc
   comms/DataDeclaration.cc
