@@ -2,7 +2,9 @@ project(RoboCRISP)
 cmake_minimum_required(VERSION 2.6)
 
 if(COMMAND cmake_policy)
-  cmake_policy(VERSION 2.8.12)
+  if("${CMAKE_VERSION}" VERSION_EQUAL "2.8.12" OR "${CMAKE_VERSION}" VERSION_GREATER "2.8.12")
+    cmake_policy(VERSION 2.8.12)
+  endif("${CMAKE_VERSION}" VERSION_EQUAL "2.8.12" OR "${CMAKE_VERSION}" VERSION_GREATER "2.8.12")
 endif(COMMAND cmake_policy)
 
 ################################################################
