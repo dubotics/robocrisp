@@ -61,8 +61,9 @@ target_link_libraries(crisp-input
 # Set platform-specific properties here.
 if(UNIX AND NOT APPLE)
   set_property(TARGET crisp-input APPEND PROPERTY "INCLUDE_DIRECTORIES" ${EVDEV_INCLUDE_DIRS})
-  set_property(TARGET crisp-input APPEND PROPERTY "INTERFACE_LINK_LIBRARIES" ${EVDEV_LIBRARIES})
-  if("${CMAKE_VERSION}" VERSION_LESS "2.8.12")
+  if(NOT "${CMAKE_VERSION}" VERSION_LESS "2.8.12")
+    set_property(TARGET crisp-input APPEND PROPERTY "INTERFACE_LINK_LIBRARIES" ${EVDEV_LIBRARIES})
+  else(NOT"${CMAKE_VERSION}" VERSION_LESS "2.8.12")
     set_property(TARGET crisp-input APPEND PROPERTY "LINK_LIBRARIES" ${EVDEV_LIBRARIES})
-  endif("${CMAKE_VERSION}" VERSION_LESS "2.8.12")
+  endif(NOT "${CMAKE_VERSION}" VERSION_LESS "2.8.12")
 endif(UNIX AND NOT APPLE)
