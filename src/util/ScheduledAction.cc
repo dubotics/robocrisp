@@ -74,8 +74,9 @@ namespace crisp
     ScheduledAction::cancel()
     {
       m_timer->cancel();
-      m_scheduler.get_io_service().post(std::bind(&Scheduler::remove, &m_scheduler,
-                                                  get_pointer()));
+      m_scheduler.get_io_service()
+        .post(std::bind(static_cast<void(Scheduler::*)(std::weak_ptr<ScheduledAction>)>(&Scheduler::remove),
+                        &m_scheduler, get_pointer()));
     }
 
     void

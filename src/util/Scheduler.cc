@@ -7,7 +7,8 @@ namespace crisp
 
     Scheduler::Scheduler(boost::asio::io_service& io_service)
       : m_io_service ( io_service ),
-        m_slots ( )
+        m_slots ( ),
+        m_data_mutex ( )
     {}
 
     Scheduler::~Scheduler()
@@ -19,8 +20,15 @@ namespace crisp
     {
       std::shared_ptr<ScheduledAction> action ( std::make_shared<ScheduledAction>(*this, function) );
       action->reset(duration);
+
       std::pair<ActionSet::iterator,bool>
-        action_pair ( m_actions.insert(std::move(action)) );
+        action_pair;
+
+      {
+        std::unique_lock<std::mutex> lock ( m_data_mutex );
+        action_pair  = m_actions.insert(std::move(action));
+      }
+
       assert(action_pair.second);
 
       return *(action_pair.first);
@@ -28,8 +36,10 @@ namespace crisp
 
     std::weak_ptr<PeriodicAction>
     Scheduler::schedule(PeriodicScheduleSlot::Duration interval,
-                                PeriodicAction::Function function)
+                        PeriodicAction::Function function)
     {
+      std::unique_lock<std::mutex> lock ( m_data_mutex );
+
       SlotMap::iterator iter ( m_slots.find(interval) );
       Slot* slot ( NULL );
 
@@ -56,10 +66,23 @@ namespace crisp
     }
 
     void
-    Scheduler::remove(const std::weak_ptr<ScheduledAction>& action)
+    Scheduler::remove(const std::weak_ptr<ScheduledAction> action)
     {
       if ( ! action.expired() )
-        m_actions.erase(action.lock());
+        {
+          std::unique_lock<std::mutex> lock ( m_data_mutex );
+          m_actions.erase(action.lock());
+        }
+    }
+
+    void
+    Scheduler::remove(PeriodicAction::ConstPointer action)
+    {
+      if ( ! action.expired() )
+        {
+          std::unique_lock<std::mutex> lock ( m_data_mutex );
+          action.lock()->slot->remove(action);
+        }
     }
 
     boost::asio::io_service&
