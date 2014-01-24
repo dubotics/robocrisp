@@ -42,7 +42,7 @@ namespace crisp
     { return m_actions.empty(); }
 
 
-    std::weak_ptr<PeriodicAction>
+    PeriodicAction::Pointer
     PeriodicScheduleSlot::push(const PeriodicAction& action)
     {
       bool was_empty ( m_actions.empty() );
@@ -55,7 +55,7 @@ namespace crisp
     }
 
 
-    std::weak_ptr<PeriodicAction>
+    PeriodicAction::Pointer
     PeriodicScheduleSlot::push(PeriodicAction&& action)
     {
       bool was_empty ( m_actions.empty() );
@@ -68,7 +68,7 @@ namespace crisp
     }
 
     void
-    PeriodicScheduleSlot::remove(const std::weak_ptr<PeriodicAction>& action)
+    PeriodicScheduleSlot::remove(PeriodicAction::ConstPointer action)
     {
       if ( ! action.expired() )
         m_actions.remove(action.lock());

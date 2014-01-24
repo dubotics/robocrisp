@@ -1,7 +1,12 @@
 #ifndef crisp_util_Buffer_hh
 #define crisp_util_Buffer_hh 1
 
-#include <crisp/util/RefCountedObject.hh>
+#ifndef __AVR__
+#  include <crisp/util/RefCountedObject.hh>
+#else
+# include <stddef.h>
+# include <crisp/util/AVR.hh>
+#endif
 
 namespace crisp
 {
@@ -9,7 +14,10 @@ namespace crisp
   {
     /** Basic data-buffer object with intrusive-pointer semantics.
      */
-    class Buffer : public crisp::util::RefCountedObject
+    class Buffer
+#ifndef __AVR__
+      : public crisp::util::RefCountedObject
+#endif
     {
     public:
       typedef void(*FreeFunctionType)(void*);
@@ -75,10 +83,14 @@ namespace crisp
 
       /** Destructor. Frees any memory owned by the buffer.
        *
-       * @throws std::runtime_error if the underlying RefCountedObject has a
+q       * @throws std::runtime_error if the underlying RefCountedObject has a
        *     non-zero reference count.
        */
-      ~Buffer() throw ( std::runtime_error );
+      ~Buffer()
+#ifndef __AVR__
+      throw ( std::runtime_error )
+#endif
+      ;
 
       /** Move-assignment operator.  This is essentially a passthrough to
        * `reset`.

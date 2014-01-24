@@ -1,5 +1,10 @@
 #include <crisp/util/Buffer.hh>
-#include <cstring>
+#ifdef __AVR__
+# include <string.h>
+#else
+# include <cstddef>
+# include <cstring>
+#endif
 
 namespace crisp
 {
@@ -13,6 +18,7 @@ namespace crisp
     {}
 
 
+#ifndef __AVR__
     Buffer::Buffer(char* _data, size_t _length, FreeFunctionType&& ff)
       : data ( _data ),
         length ( _length ),
@@ -30,6 +36,16 @@ namespace crisp
       memset(data, 0, _length);
     }
 
+    Buffer::Buffer(const Buffer& b)
+      : data ( static_cast<char*>(malloc(b.length)) ),
+	length ( b.length ),
+	owns_data ( true ),
+	free_function ( free )
+    {
+      memcpy(data, b.data, length);
+    }
+#endif
+
     Buffer::Buffer(Buffer&& b)
       : data ( b.data ),
 	length ( b.length ),
@@ -46,22 +62,17 @@ namespace crisp
         free_function ( nullptr )
     {}
 
-    Buffer::Buffer(const Buffer& b)
-      : data ( static_cast<char*>(malloc(b.length)) ),
-	length ( b.length ),
-	owns_data ( true ),
-	free_function ( free )
-    {
-      memcpy(data, b.data, length);
-    }
-
-    Buffer::~Buffer() throw ( std::runtime_error )
+    Buffer::~Buffer()
+#ifndef __AVR__
+      throw ( std::runtime_error )
+#endif
     {
       if ( owns_data && data )
 	free_function(data);
       data = nullptr;
     }
 
+#ifndef __AVR__
     void
     Buffer::resize(size_t capacity)
     {
@@ -79,6 +90,7 @@ namespace crisp
 	  length = capacity;
 	}
     }
+#endif
 
     void
     Buffer::reset(Buffer&& b)
@@ -96,6 +108,7 @@ namespace crisp
     }
 
 
+#ifndef __AVR__
     Buffer
     Buffer::copy(const char* data, size_t length)
     {
@@ -128,5 +141,6 @@ namespace crisp
       memcpy(out->data, buf.data, buf.length);
       return out;
     }
+#endif
   }
 }

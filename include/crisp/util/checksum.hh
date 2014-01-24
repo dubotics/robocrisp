@@ -1,9 +1,13 @@
 #ifndef crisp_util_checksum_hh
 #define crisp_util_checksum_hh 1
 
-#include <cstdint>
-#include <cstddef>
-
+#ifndef __AVR__
+# include <cstdint>
+# include <cstddef>
+#else
+# include <stdint.h>
+# include <stddef.h>
+#endif
 
 namespace crisp
 {

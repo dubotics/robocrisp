@@ -1,9 +1,11 @@
 #ifndef crisp_util_PeriodicAction_hh
 #define crisp_util_PeriodicAction_hh 1
 
-#include <functional>
-#include <boost/system/error_code.hpp>
-#include <memory>
+#ifndef __AVR__
+# include <functional>
+# include <boost/system/error_code.hpp>
+# include <memory>
+#endif
 
 namespace crisp
 {
@@ -15,13 +17,28 @@ namespace crisp
     /** An action scheduled on a PeriodicScheduleSlot.  `PeriodicAction` is used to
         manage a scheduled action by rescheduling, cancelling, or temporarily
         disabling it.  */
-    struct PeriodicAction : public std::enable_shared_from_this<PeriodicAction>
+    struct PeriodicAction
+#ifndef __AVR__
+      : public std::enable_shared_from_this<PeriodicAction>
+#endif
     {
       /** Function type for user callbacks.
        *
        * @param action The Action object associated with the callback.
        */
+#ifndef __AVR__
       typedef std::function<void(PeriodicAction& action)> Function;
+#else
+      typedef void(*Function)(PeriodicAction& action);
+#endif
+
+#ifndef __AVR__
+      typedef std::weak_ptr<PeriodicAction> Pointer;
+      typedef const std::weak_ptr<PeriodicAction> ConstPointer;
+#else
+      typedef PeriodicAction* Pointer;
+      typedef const PeriodicAction* ConstPointer;
+#endif
 	
       PeriodicScheduleSlot* slot; /**< Pointer to the schedule slot that
                                      contains this action.  This is used by
@@ -36,8 +53,10 @@ namespace crisp
       PeriodicAction(PeriodicScheduleSlot* _slot,
                      Function _function);
 
+#ifndef __AVR__
       inline std::weak_ptr<PeriodicAction>
       get_pointer() { return shared_from_this(); }
+#endif
 
       /** Handler invoked by the slot's timer when it expires or is cancelled.
        * This function calls the user function whenever called with an empty
@@ -45,8 +64,14 @@ namespace crisp
        *
        * @param error An error code that specifies why the function was called.
        */
+#ifndef __AVR__
       void
       timer_expiry_handler(const boost::system::error_code& error);
+#else
+      void
+      timer_expiry_handler();
+#endif
+
 
       bool
       operator < (const PeriodicAction& action) const;

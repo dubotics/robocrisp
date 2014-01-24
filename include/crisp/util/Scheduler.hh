@@ -1,16 +1,20 @@
 #ifndef crisp_util_Scheduler_hh
 #define crisp_util_Scheduler_hh 1
 
-#define BOOST_ASIO_HAS_STD_CHRONO 1
-#include <chrono>
-#include <unordered_map>
-#include <unordered_set>
-#include <boost/asio/steady_timer.hpp>
+#ifndef __AVR__
+# define BOOST_ASIO_HAS_STD_CHRONO 1
+# include <chrono>
+# include <mutex>
+# include <unordered_map>
+# include <unordered_set>
+# include <boost/asio/steady_timer.hpp>
+#endif
+
 #include <crisp/util/ScheduledAction.hh>
 #include <crisp/util/PeriodicAction.hh>
 #include <crisp/util/PeriodicScheduleSlot.hh>
 
-
+#ifndef __AVR__
 /* Need to define several std::hash<...> implementations for Scheduler,
    which uses std::unordered_map and std::unordered_set keyed on these types. */
 namespace std
@@ -38,6 +42,7 @@ namespace std
     };
   };
 }
+#endif
 
 namespace crisp
 {
