@@ -5,6 +5,9 @@ if(COMMAND cmake_policy)
   cmake_policy(VERSION 2.8.12)
 endif(COMMAND cmake_policy)
 
+set(RoboCRISP_BUILD_INPUT ON)
+set(RoboCRISP_BUILD_COMMS ON)
+
 ################################################################
 
 set(Boost_USE_MULTITHREADED ON)
@@ -35,8 +38,17 @@ link_directories(${Boost_LIBRARY_DIRS})
 
 if(UNIX AND NOT APPLE)          # Assuming Linux.
   find_package(PkgConfig)
-  pkg_check_modules(EVDEV REQUIRED libevdev)
+  pkg_check_modules(EVDEV libevdev)
+  if(NOT libevdev_FOUND)
+    set(RoboCRISP_BUILD_INPUT OFF)
+  endif(NOT libevdev_FOUND)
 endif(UNIX AND NOT APPLE)
+
+# ----------------------------------------------------------------
+
+# Platform (hardware)-specific settings
+include("${RoboCRISP_SOURCE_DIR}/cmake/Platform.cmake")
+
 ################################################################
 
 add_definitions(
@@ -69,7 +81,7 @@ add_subdirectory(tests)
 
 # Export to the user package registry.
 export(
-  TARGETS crisp-util crisp-input crisp-comms
+  TARGETS ${RoboCRISP_EXPORTED_LIBRARIES}
   FILE "${${CMAKE_PROJECT_NAME}_BINARY_DIR}/${CMAKE_PROJECT_NAME}Targets.cmake"
   )
 file(COPY "${RoboCRISP_SOURCE_DIR}/cmake/RoboCRISPConfig.cmake"

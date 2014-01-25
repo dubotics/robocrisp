@@ -12,12 +12,13 @@ add_executable(transcoder-test transcoder-test.cc)
 target_link_libraries(transcoder-test crisp-comms crisp-util)
 
 # Basic controller test.
-add_executable(controller-test controller-test.cc)
-set_property(TARGET controller-test
-  APPEND PROPERTY INCLUDE_DIRECTORIES ${EVDEV_INCLUDE_DIRS}
-  )
-target_link_libraries(controller-test crisp-input pthread)
-
+if(RoboCRISP_BUILD_INPUT)
+  add_executable(controller-test controller-test.cc)
+  set_property(TARGET controller-test
+    APPEND PROPERTY INCLUDE_DIRECTORIES ${EVDEV_INCLUDE_DIRS}
+    )
+  target_link_libraries(controller-test crisp-input pthread)
+endif(RoboCRISP_BUILD_INPUT)
 
 # Scheduler test
 add_executable(periodic-test periodic-test.cc)
