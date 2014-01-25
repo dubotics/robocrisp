@@ -32,9 +32,11 @@ namespace crisp
     void
     PeriodicAction::cancel()
     {
-      slot->get_scheduler().get_io_service().
-        post(std::bind(&PeriodicScheduleSlot::remove, slot,
-                       get_pointer()));
+      active = false;
+      Scheduler& scheduler ( slot->get_scheduler() );
+      scheduler.get_io_service()
+        .post(std::bind(static_cast<void(Scheduler::*)(PeriodicAction::ConstPointer)>(&Scheduler::remove),
+                        &scheduler, get_pointer()));
     }
 
     bool

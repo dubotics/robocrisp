@@ -34,7 +34,7 @@ namespace crisp
     PeriodicScheduleSlot::get_scheduler() const
     {
       return m_scheduler;
-    }      
+    }
 
 
     bool
@@ -92,13 +92,18 @@ namespace crisp
     {
       m_timer->expires_from_now(m_interval);
 
-      /* Set up the action callbacks for this run. */
+      /* Set up the action callbacks for this run.  Note that we're setting up
+         only the actions' timer-expiry handlers -- PeriodicScheduleSlot doesn't
+         call the user-defined callbacks itself.
+       */
       for ( const std::shared_ptr<PeriodicAction>& action : m_actions )
         if ( action->active )
-          m_timer->async_wait(std::bind(&PeriodicAction::timer_expiry_handler, action.get(), std::placeholders::_1));
+          m_timer->async_wait(std::bind(&PeriodicAction::timer_expiry_handler,
+                                        action.get(), std::placeholders::_1));
 
       /* Set up the slot's expiry handler so we can reset the timer again.  */
-      m_timer->async_wait(std::bind(&PeriodicScheduleSlot::timer_expiry_handler, this, std::placeholders::_1));
+      m_timer->async_wait(std::bind(&PeriodicScheduleSlot::timer_expiry_handler,
+                                    this, std::placeholders::_1));
     }
   }
 }

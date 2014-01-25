@@ -102,13 +102,15 @@ namespace crisp
       std::weak_ptr<PeriodicAction>
       emplace(Args... args);
 
+    protected:
+      friend class Scheduler;
 
       /** Remove an action from the slot.
        *
        * @param action The action to be removed.
        */
       void
-      remove(const std::weak_ptr<PeriodicAction>& action);
+      remove(PeriodicAction::ConstPointer action);
     };
   }
 }

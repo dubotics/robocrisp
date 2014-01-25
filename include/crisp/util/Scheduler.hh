@@ -102,7 +102,13 @@ namespace crisp
        *
        * @param action Action to be canceled and removed.
        */
-      void remove(const std::weak_ptr<ScheduledAction>& action);
+      void remove(const std::weak_ptr<ScheduledAction> action);
+
+      /** Remove a previously-scheduled action.
+       *
+       * @param action Action to be canceled and removed.
+       */
+      void remove(PeriodicAction::ConstPointer action);
 
       /** Fetch a reference to the Boost.Asio `io_service` object used by this
        *  scheduler.
@@ -127,6 +133,9 @@ namespace crisp
 
       /** One-time actions active on this scheduler. */
       ActionSet m_actions;
+
+      /** Mutex used to ensure strict data-access ordering.  */
+      std::mutex m_data_mutex;
     };
   }
 }

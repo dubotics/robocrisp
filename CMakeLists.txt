@@ -2,7 +2,9 @@ project(RoboCRISP)
 cmake_minimum_required(VERSION 2.6)
 
 if(COMMAND cmake_policy)
-  cmake_policy(VERSION 2.8.12)
+  if(NOT "${CMAKE_VERSION}" VERSION_LESS "2.8.12")
+    cmake_policy(VERSION 2.8.12)
+  endif(NOT "${CMAKE_VERSION}" VERSION_LESS "2.8.12")
 endif(COMMAND cmake_policy)
 
 set(RoboCRISP_BUILD_INPUT ON)
@@ -12,7 +14,7 @@ set(RoboCRISP_BUILD_COMMS ON)
 
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_LIBS OFF)
-find_package(Boost 1.54.0 REQUIRED COMPONENTS
+find_package(Boost 1.54.0 COMPONENTS
   system
   coroutine
   context
@@ -21,13 +23,19 @@ find_package(Boost 1.54.0 REQUIRED COMPONENTS
 if(NOT Boost_FOUND)
   message(FATAL_ERROR
 
-    "The Boost libraries and/or their development files were not found.  Please"
-    " install Boost v1.54 or later.\n"
+    "Required components of the Boost C++ libraries and/or their development"
+    " files were not found.  Please install Boost v1.54 or later.\n"
 
-    "On Debian and Debian-based GNU/Linux systems (including Ubuntu and "
-    "derivatives), installing `libboost-coroutine-dev` should pull in the "
-    "necessary Boost dependencies."
+    "On Debian and Debian-based GNU/Linux systems (including Ubuntu and"
+    " derivatives), installing these packages should pull in the necessary Boost"
+    " dependencies:\n"
 
+    "        libboost-system-dev\n"
+    "        libboost-coroutine-dev\n"
+
+    "If those packages are not available on your system, try these instead:\n"
+    "        libboost-system1.54-dev\n"
+    "        libboost-coroutine1.54-dev\n"
     )
 endif(NOT Boost_FOUND)
 
