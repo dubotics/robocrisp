@@ -3,6 +3,7 @@
 
 #define BOOST_ASIO_HAS_STD_CHRONO 1
 #include <chrono>
+#include <mutex>
 #include <unordered_map>
 #include <unordered_set>
 #include <boost/asio/steady_timer.hpp>
@@ -108,7 +109,7 @@ namespace crisp
        *
        * @param action Action to be canceled and removed.
        */
-      void remove(PeriodicAction::ConstPointer action);
+      void remove(const std::weak_ptr<PeriodicAction> action);
 
       /** Fetch a reference to the Boost.Asio `io_service` object used by this
        *  scheduler.

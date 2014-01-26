@@ -76,7 +76,7 @@ namespace crisp
     }
 
     void
-    Scheduler::remove(PeriodicAction::ConstPointer action)
+    Scheduler::remove(std::weak_ptr<PeriodicAction> action)
     {
       if ( ! action.expired() )
         {

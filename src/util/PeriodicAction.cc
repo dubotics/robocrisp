@@ -35,7 +35,7 @@ namespace crisp
       active = false;
       Scheduler& scheduler ( slot->get_scheduler() );
       scheduler.get_io_service()
-        .post(std::bind(static_cast<void(Scheduler::*)(PeriodicAction::ConstPointer)>(&Scheduler::remove),
+        .post(std::bind(static_cast<void(Scheduler::*)(std::weak_ptr<PeriodicAction>)>(&Scheduler::remove),
                         &scheduler, get_pointer()));
     }
 

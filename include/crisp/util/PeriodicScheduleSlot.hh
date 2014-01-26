@@ -110,7 +110,7 @@ namespace crisp
        * @param action The action to be removed.
        */
       void
-      remove(PeriodicAction::ConstPointer action);
+      remove(std::weak_ptr<PeriodicAction> action);
     };
   }
 }

@@ -68,7 +68,7 @@ namespace crisp
     }
 
     void
-    PeriodicScheduleSlot::remove(const std::weak_ptr<PeriodicAction>& action)
+    PeriodicScheduleSlot::remove(const std::weak_ptr<PeriodicAction> action)
     {
       if ( ! action.expired() )
         m_actions.remove(action.lock());
