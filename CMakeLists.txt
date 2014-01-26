@@ -47,9 +47,9 @@ link_directories(${Boost_LIBRARY_DIRS})
 if(UNIX AND NOT APPLE)          # Assuming Linux.
   find_package(PkgConfig)
   pkg_check_modules(EVDEV libevdev)
-  if(NOT libevdev_FOUND)
+  if(NOT EVDEV_FOUND)
     set(RoboCRISP_BUILD_INPUT OFF)
-  endif(NOT libevdev_FOUND)
+  endif(NOT EVDEV_FOUND)
 endif(UNIX AND NOT APPLE)
 
 # ----------------------------------------------------------------
