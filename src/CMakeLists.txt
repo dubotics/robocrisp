@@ -69,3 +69,7 @@ if(RoboCRISP_BUILD_INPUT)
     set_property(TARGET crisp-input APPEND PROPERTY "INTERFACE_LINK_LIBRARIES" ${EVDEV_LIBRARIES})
   endif(UNIX AND NOT APPLE)
 endif(RoboCRISP_BUILD_INPUT)
+
+# Inform the parent CMakeLists.txt of the libraries exported by _this_
+# CMakeLists.txt.
+set(RoboCRISP_EXPORTED_LIBRARIES "${RoboCRISP_EXPORTED_LIBRARIES}" PARENT_SCOPE)
