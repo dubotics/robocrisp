@@ -32,6 +32,7 @@ if(RoboCRISP_BUILD_COMMS)
     comms/Module.cc
     comms/ModuleControl.cc
     comms/ModuleInput.cc
+    comms/NodeServer.cc
     comms/Sensor.cc
     )
   target_link_libraries(crisp-comms
