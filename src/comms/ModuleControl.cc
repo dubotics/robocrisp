@@ -28,15 +28,18 @@ namespace crisp
 
 
     ModuleControl::ModuleControl(const Module* _module, size_t _values_capacity)
-      : module_id ( _module->id ),
+      : module_id ( _module ? _module->id : 0 ),
 	input_ids ( 0 ),
 	module ( _module ),
 	values ( 0 )
     {
-      if ( _values_capacity == std::numeric_limits<size_t>::max() )
-	values.ensure_capacity(module->num_inputs);
-      else if ( _values_capacity > 0 )
-	values.ensure_capacity(_values_capacity);
+      if ( _module != nullptr )
+        {
+          if ( _values_capacity == std::numeric_limits<size_t>::max() )
+            values.ensure_capacity(module->num_inputs);
+          else if ( _values_capacity > 0 )
+            values.ensure_capacity(_values_capacity);
+        }
     }
 
     ModuleControl::ModuleControl(ModuleControl&& mc)
