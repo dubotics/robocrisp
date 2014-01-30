@@ -150,11 +150,11 @@ main(int argc, char* argv[])
                        fprintf(stderr, "Got configuration:\n");
                        for ( const Module& module : config.modules )
                          {
-                           fprintf(stderr, "    module \"%s\"\n", module.name);
+                           fprintf(stderr, "    module %u: \"%s\"\n", module.id, module.name);
                            for ( const ModuleInput<>& input : module.inputs )
-                             fprintf(stderr, "        input \"%s\" (%s)\n", input.name, input.data_type.type_name());
+                             fprintf(stderr, "        input %u: \"%s\" (%s)\n", input.input_id, input.name, input.data_type.type_name());
                            for ( const Sensor<>& sensor : module.sensors )
-                             fprintf(stderr, "       sensor \"%s\" (%s)\n", sensor.name, sensor.data_type.type_name());
+                             fprintf(stderr, "       sensor %u: \"%s\" (%s)\n", sensor.id, sensor.name, sensor.data_type.type_name());
                          }
                      });
 
