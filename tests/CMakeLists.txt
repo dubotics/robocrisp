@@ -25,5 +25,10 @@ add_executable(periodic-test periodic-test.cc)
 target_link_libraries(periodic-test crisp-util boost_system)
 
 
+# Signal test
 add_executable(signal-test signal-test.cc)
 target_link_libraries(signal-test crisp-util boost_system)
+
+# Dispatcher test: make sure the message-dispatcher mechanism works.
+add_executable(dispatcher-test dispatcher-test.cc)
+target_link_libraries(dispatcher-test crisp-util crisp-comms)

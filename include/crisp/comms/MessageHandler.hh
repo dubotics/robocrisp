@@ -29,13 +29,9 @@ namespace crisp
      */
     template < typename _Node, typename _Tp, typename _Function >
     static void
-    dereference_and_call(_Function handler, _Node& node, const std::shared_ptr<_Tp>& body,
+    dereference_and_call(_Function handler, _Node& node, const std::shared_ptr<_Tp> body,
                          MessageHandlerSignal<_Node, _Tp>& source)
     {
-      /* Here we create a copy of the shared_ptr (to which we were passed a
-         _reference_) so that the managed memory isn't freed while the handler
-         function is still running. */
-      std::shared_ptr<_Tp> ptr ( body );
       handler(node, *body);
     }
 
@@ -73,50 +69,18 @@ namespace crisp
      * will return before even the first callback has been called.
      *
      * This class implements a wrapper around `Signal` that manages message-body
-     * objects using `std::shared_ptr` and `std::unordered_set` for argument
-     * persistance.
+     * objects by translating through an intermediary callback that takes a
+     * `std::shared_ptr` argument.
      */
-    /* NOTE that an attempt _has_ been made to avoid the need for keeping a
-       local set of `shared_ptr`s by inheriting from a signal that passes the
-       body `shared_ptr` by value rather than by reference.  For reasons that
-       aren't entirely clear to the author, that resulted in `NULL`
-       shared-pointer objects being passed to `dereference_and_call`. */
     template < typename _Node, typename _Body >
-    class MessageHandlerSignal : public crisp::util::Signal<void(_Node&, const std::shared_ptr<_Body>&)>
+    class MessageHandlerSignal : public crisp::util::Signal<void(_Node&, const std::shared_ptr<_Body>)>
     {
     public:
-      typedef crisp::util::Signal<void(_Node&, const std::shared_ptr<_Body>&)> Base;
+      typedef crisp::util::Signal<void(_Node&, const std::shared_ptr<_Body>)> Base;
       typedef std::function<void(_Node&,const _Body&)> Function;
 
-      using Connection = typename Base::Connection;
       using Base::Base;         /* inherit constructors */
-
-    private:
-      typedef std::unordered_set<std::shared_ptr<_Body> > BodySet;
-      BodySet m_live_bodies;
-      std::mutex m_live_bodies_mutex;
-
-    public:
-      MessageHandlerSignal()
-        : Base(),
-          m_live_bodies ( ),
-          m_live_bodies_mutex ( )
-      {}
-
-      MessageHandlerSignal(const MessageHandlerSignal& sig)
-        : Base(sig),
-          m_live_bodies ( sig.m_live_bodies ),
-          m_live_bodies_mutex ( )
-      {}
-
-      MessageHandlerSignal&
-      operator =(const MessageHandlerSignal& sig)
-      {
-        Base::operator=(sig);
-        m_live_bodies = sig.m_live_bodies;
-        return *this;
-      }
-
+      using Connection = typename Base::Connection;
 
       Connection
       connect(Function&& function)
@@ -126,43 +90,6 @@ namespace crisp
                                        function, _1, _2, std::ref(*this)));
       }
 
-
-      template < typename... Args >
-      void emit(_Node& node, const Message& m, Args... args)
-      {
-        std::shared_ptr<_Body> ptr ( std::make_shared<_Body>(m.as<_Body>(args...)) );
-
-        typename BodySet::iterator iter;
-
-        {
-          std::unique_lock<std::mutex> lock ( m_live_bodies_mutex );
-          iter = m_live_bodies.insert(ptr).first;
-        }
-
-        this->Base::emit(node, *iter);
-
-        using namespace std::placeholders;
-
-        /* Set a timer, and check if we can free the message-body data
-           (`release_on_timeout`) when it expires.  */
-        node.scheduler.set_timer(std::chrono::seconds(MESSAGE_HANDLER_SIGNAL_FREE_DELAY),
-                                 std::bind(&MessageHandlerSignal::release_on_timeout,
-                                           this, _1, std::cref(*iter)));
-      }
-
-    protected:
-      /** Timer-expiry handler for the `set_timer` call in `emit`. */
-      void
-      release_on_timeout(crisp::util::ScheduledAction& action, const std::shared_ptr<_Body>& ptr)
-      {
-        if ( ptr.unique() )
-          {
-            std::unique_lock<std::mutex> lock ( m_live_bodies_mutex );
-            m_live_bodies.erase(ptr);
-          }
-        else
-          action.reset(std::chrono::seconds(MESSAGE_HANDLER_SIGNAL_FREE_DELAY));
-      }
     };
     /**@}*/
 
