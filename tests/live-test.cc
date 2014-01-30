@@ -121,8 +121,9 @@ main(int argc, char* argv[])
       boost::asio::signal_set ss ( service, SIGINT );
       ss.async_wait([&](const boost::system::error_code& error, int sig)
                     {
-                      if ( ! error )
-                        server.halt();
+                      if ( error )
+                        fprintf(stderr, "signal handler received error: %s\n", error.message().c_str());
+                      server.halt();
                     });
       server.run();
     }
