@@ -48,11 +48,20 @@ namespace crisp
        */
       ModuleControl(const Module* _module, size_t _values_capacity = std::numeric_limits<size_t>::max());
       ~ModuleControl();
+
+      /** Reset the object's target module, clearing all set values.
+       *
+       * @param _module Pointer to the new module for which this module-control
+       *   object is used to set values; if `nullptr` or `NULL` (the default),
+       *   the ModuleControl instance cannot be used until `reset` is called
+       *   with a valid Module pointer.
+       */
       void reset(const Module* _module = nullptr);
 
 
-      /** Fetch a pointer to the stored input-value instance for the given input.
-       * @param 
+      /** Fetch a pointer to a data-value instance for the given input.
+       *
+       * @param input Input for which to find or create a data value.
        */
       DataValue<>*
 	value_for(const ModuleInput<>& input);
