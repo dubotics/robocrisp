@@ -35,15 +35,17 @@ namespace crisp
       template < typename _Node, typename _Body, typename... Args >
       static typename std::enable_if<!std::is_void<_Body>::value && !std::is_same<_Body,Message>::value, void>::type
       call_handler(_Node& node, Message&& m, MessageDirection direction,
-                   MessageHandler<_Node, _Body>& handler, Args... args)
+                   MessageHandler<_Node, _Body>& handler,
+                   const Args&... args)
       {
+        std::shared_ptr<_Body> body ( std::make_shared<_Body>(m.as<_Body>(args...)) );
         switch ( direction )
           {
           case MessageDirection::INCOMING:
-            handler.received.emit(node, m, args...);
+            handler.received.emit(node, body);
             break;
           case MessageDirection::OUTGOING:
-            handler.sent.emit(node, m, args...);
+            handler.sent.emit(node, body);
             break;
           }
       }
