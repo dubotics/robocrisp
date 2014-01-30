@@ -94,6 +94,8 @@ namespace crisp
 
       if ( m_node )
         set_target(*m_node);
+
+      return *this;
     }
 
     template < typename _Node >
