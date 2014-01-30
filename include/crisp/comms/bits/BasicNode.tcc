@@ -48,10 +48,13 @@ namespace crisp
     BasicNode<_Protocol>::run()
     {
       launch();
-      std::unique_lock<std::mutex> lock ( m_halt_mutex );
-      m_halt_cv.wait(lock);
 
-      if ( ! stopped )
+      {
+        std::unique_lock<std::mutex> lock ( m_halt_mutex );
+        m_halt_cv.wait(lock);
+      }
+
+      if ( ! m_stopped )
         halt();
     }
 
@@ -94,6 +97,7 @@ namespace crisp
     {
       if ( ! m_halting.test_and_set() )
         {
+          std::unique_lock<std::mutex> lock ( m_halt_mutex );
           m_stopped = true;
 
           if ( ! can_halt() && ! force_try )
@@ -101,13 +105,17 @@ namespace crisp
               m_stopped = false;
               m_halting.clear();
 
-              std::unique_lock<std::mutex> lock ( m_halt_mutex );
               m_halt_cv.notify_all();
+              m_io_service.poll();
 
               return false;
             }
 
           fprintf(stderr, "[0x%x] Halting... ", THREAD_ID);
+          fflush_unlocked(stderr); /* make sure we print diagnostics in the
+                                      right order. */
+
+          m_socket.close();
 
           if ( ! m_sync_action.expired() )
             m_sync_action.lock()->cancel();
@@ -118,14 +126,14 @@ namespace crisp
           m_sync_action.reset();
           m_halt_action.reset();
 
-          m_socket.close();
           m_outgoing_queue.wake_all();
-
           m_io_service.poll();
 
           WorkerObject::halt();
 
+          fflush_unlocked(stderr);
           fprintf(stderr, "done.\n");
+
           m_halt_cv.notify_all();
           return true;
         }
@@ -161,8 +169,6 @@ namespace crisp
 
           if ( aborted || m_stopped )
             break;
-          else
-            m_halting.clear();
 
           /* Encode it. */
           MemoryEncodeBuffer meb ( message.get_encoded_size() );
@@ -200,7 +206,8 @@ namespace crisp
         }
       fprintf(stderr, "[0x%x] Exiting send loop.\n", THREAD_ID);
 
-      m_io_service.post(std::bind(&BasicNode::halt, this, false));
+      if ( ! m_stopped )
+        m_io_service.post(std::bind(&BasicNode::halt, this, false));
     }
 
     template < typename _Protocol >
@@ -295,7 +302,8 @@ namespace crisp
         }
       fprintf(stderr, "[0x%x] Exiting receive loop.\n", THREAD_ID);
 
-      m_io_service.post(std::bind(&BasicNode::halt, this, false));
+      if ( ! m_stopped )
+        m_io_service.post(std::bind(&BasicNode::halt, this, false));
     }
 
   }
