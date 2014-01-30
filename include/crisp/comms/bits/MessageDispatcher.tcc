@@ -82,6 +82,21 @@ namespace crisp
     {}
 
     template < typename _Node >
+    MessageDispatcher<_Node>&
+    MessageDispatcher<_Node>::operator =(const MessageDispatcher<_Node>& other)
+    {
+      handshake = other.handshake;
+      handshake_response = other.handshake_response;
+      sync = other.sync;
+      configuration_query = other.configuration_query;
+      configuration_response = other.configuration_response;
+      module_control = other.module_control;
+
+      if ( m_node )
+        set_target(*m_node);
+    }
+
+    template < typename _Node >
     void
     MessageDispatcher<_Node>::set_target(_Node& node)
     {

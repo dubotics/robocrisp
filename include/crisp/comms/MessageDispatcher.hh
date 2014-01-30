@@ -74,6 +74,11 @@ namespace crisp
       void
       set_default_callbacks();
 
+      /** Assignment operator.  Copies the handlers -- _and_ the target node! --
+          of another dispatcher. */
+      MessageDispatcher&
+      operator =(const MessageDispatcher& other);
+
     private:
       _Node* m_node;
 
