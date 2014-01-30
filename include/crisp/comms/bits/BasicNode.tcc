@@ -62,14 +62,19 @@ namespace crisp
       if ( running() )
         return false;
 
+      /* NOTA BENE: for some reason, the order in which the next four statements
+         are executed is CRITICAL.  I don't completely understand why right now
+         -- it has something to do with threading and having something for the
+         worker threads to do (maybe also having worker threads already
+         available for the coroutine spawns?).  */
+      send(Handshake { PROTOCOL_VERSION, role });
+
       WorkerObject::launch();
 
       boost::asio::spawn(m_io_service, std::bind(&BasicNode::receive_loop, this,
                                                  std::placeholders::_1));
       boost::asio::spawn(m_io_service, std::bind(&BasicNode::send_loop, this,
                                                  std::placeholders::_1));
-
-      send(Handshake { PROTOCOL_VERSION, role });
 
       /* The default `handshake_response.received` handler will cancel this
          action on successful handshake sequence. */
