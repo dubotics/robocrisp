@@ -3,7 +3,7 @@
  * Reference-counted object class and supporting structures and
  * functions for use with boost::intrusive_ptr.
  *
- * @copyright 2011-2013 Collin J. Sutton.  All rights reserved.
+ * @copyright 2011-2014 Collin J. Sutton.  All rights reserved.
  *
  * Copied from Collin Sutton's personal library for the RoboCRISP project.
  *
@@ -45,31 +45,31 @@ namespace crisp
 
       std::atomic<ssize_t> refCount;
     };
+
+    /** Increment the reference count of a RefCountedObject.
+     *
+     * @warning This function is provided for integration with
+     * boost::intrusive_ptr, and is not intended to be called directly.
+     */
+    inline void
+    intrusive_ptr_add_ref(crisp::util::RefCountedObject* __rco)
+    {
+      __rco->refCount++;
+    }
+
+    /** Decrement the reference count of a RefCountedObject, and delete the
+     * object if its reference count is zero.
+     *
+     * @warning This function is provided for integration with
+     * boost::intrusive_ptr, and is not intended to be called directly.
+     */
+    inline void
+    intrusive_ptr_release(crisp::util::RefCountedObject* __rco)
+    {
+      if ( !  --(__rco->refCount) )
+        delete __rco;
+    }
   }
-}
-
-/** Increments the reference count of a RefCountedObject.
- *
- * @warning This function is provided for integration with boost::intrusive_ptr, and is not
- * intended to be called directly.
- */
-inline void
-intrusive_ptr_add_ref(crisp::util::RefCountedObject* __rco)
-{
-  __rco->refCount++;
-}
-
-/** Decrements the reference count of a RefCountedObject, and deletes the object if its
- * reference count is zero.
- *
- * @warning This function is provided for integration with boost::intrusive_ptr, and is not
- * intended to be called directly.
- */
-inline void
-intrusive_ptr_release(crisp::util::RefCountedObject* __rco)
-{
-  if ( !  --(__rco->refCount) )
-    delete __rco;
 }
 
 #include <boost/intrusive_ptr.hpp>
