@@ -160,6 +160,7 @@ namespace crisp
                            hs.acknowledge == HandshakeAcknowledge::ACK ? "\033[32maccepts\033[0m" : "\033[31mrejects\033[0m",
                            hs.role == NodeRole::MASTER ? "MASTER" : (hs.role == NodeRole::SLAVE ? "SLAVE" : "ERROR"));
 
+#ifndef NODE_NO_DISPATCHER_CONTROL
                    if ( hs.acknowledge == HandshakeAcknowledge::ACK )
                      {
                        if ( ! _node.m_halt_action.expired() )
@@ -172,6 +173,7 @@ namespace crisp
                      }
                    else
                      _node.halt();
+#endif  /* NODE_NO_DISPATCHER_CONTROL */
                  });
 
       handshake_response.sent
