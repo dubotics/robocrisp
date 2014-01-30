@@ -5,9 +5,15 @@
 #ifndef crisp_comms_NodeServer_hh
 #define crisp_comms_NodeServer_hh 1
 
-#include <unordered_set>
-#include <boost/asio/io_service.hpp>
+#include <mutex>
 #include <thread>
+#include <unordered_set>
+
+#include <boost/asio/spawn.hpp>
+#include <boost/asio/io_service.hpp>
+#include <boost/asio/ip/tcp.hpp>
+
+#include <crisp/comms/BasicNode.hh>
 #include <crisp/comms/Configuration.hh>
 #include <crisp/comms/MessageDispatcher.hh>
 
@@ -38,108 +44,43 @@ namespace crisp
       /** Connected nodes. */
       NodeSet nodes;
 
+      std::mutex nodes_mutex;
+
       /** Configuration to be installed on created (nodes). */
       Configuration configuration;
 
       /** MessageDispatcher to be copied to created (nodes). */
       MessageDispatcher<_Node> dispatcher;
 
-      /** Handle to the thread in which `run` is running when call indirectly via `launch`. */
+      /** Handle to the thread in which `run` is running when called indirectly via `launch`. */
       std::thread run_thread;
+
+      /** Flag used to indicate that the server is currently halting. */
+      std::atomic_flag halting;
+
+      /** Flag used to communicate to the server loop that it should exit. */
+      std::atomic<bool> stopped;
 
 
       NodeServer(boost::asio::io_service& _io_service,
-                 const typename Protocol::endpoint& listen_endpoint)
-        : io_service ( _io_service ),
-          acceptor ( io_service, listen_endpoint ),
-          nodes ( ),
-          configuration ( ),
-          dispatcher ( ),
-          run_thread ( )
-      {}
+                 const typename Protocol::endpoint& listen_endpoint);
 
-      ~NodeServer()
-      {
-        halt();
-      }
+      ~NodeServer();
 
-      void launch()
-      {
-        run_thread = std::thread(std::bind(&NodeServer::run, this));
-      }
+      void launch();
 
-      void
-      run()
-      {
-        std::thread main_thread( std::bind(&NodeServer::server_main, this) );
-        main_thread.join();
-      }
+      void run();
 
-      void
-      halt()
-      {
-        acceptor.close();
-
-        /* Shut down all of the client nodes. */
-        for ( Node* node : const_cast<NodeSet&>(nodes) )
-          {
-            node->halt();
-            delete node;
-          }
-
-        io_service.stop();
-      }
-
+      void halt();
 
       /** Main server routine.
        */
       void
-      server_main()
-      {
-        acceptor.listen();		/* start listening for incoming connections. */
+      server_main(boost::asio::yield_context yield);
 
-        /* Grab the I/O coordinator service used by the connection-acceptor object. */
-        boost::asio::io_service& service ( acceptor.get_io_service() );
-
-
-        fputs("Entering `accept()` loop.\n", stderr);
-        while ( acceptor.is_open() )
-          {
-            boost::system::error_code ec;
-            typename Protocol::endpoint endpoint;
-
-            /* Create an unconnected socket for `accept` to initialize. */
-            typename Protocol::socket socket ( service );
-
-            /* `accept` blocks until we receive an incoming connection or an
-               error occurs.  */
-            acceptor.accept(socket, endpoint, ec);
-            if ( ec )
-              {
-                fprintf(stderr, "accept: %s\n", strerror(ec.value()));
-                break;
-              }
-            else
-              {
-                std::cerr << "Accepted connection from " << endpoint << std::endl;
-
-                /* We've got a connection.  Create a new protocol-node on the
-                 * connection and add it to our set of connected nodes. */
-                Node* node ( new Node(std::move(socket), NodeRole::SLAVE) );
-
-                node->configuration = configuration;
-                node->dispatcher = dispatcher;
-                node->dispatcher.set_target(*node);
-
-                /* Launch the node's worker threads. */
-                node->launch();
-
-                nodes.insert(node);
-              }
-          };
-      }
     };
 
+    extern template class NodeServer< BasicNode<boost::asio::ip::tcp> >;
   }
 }
 
