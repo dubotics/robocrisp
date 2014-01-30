@@ -2,7 +2,7 @@
  *
  * Defines a simple array (vector) type similar to std::vector.
  *
- * @copyright 2011-2013 Collin J. Sutton.  All rights reserved.
+ * @copyright 2011-2014 Collin J. Sutton.  All rights reserved.
  *
  * Copied from Collin Sutton's personal library for the RoboCRISP project.
  */
@@ -223,6 +223,12 @@ namespace crisp
       inline SArray&
       operator = (SArray&& sa)
       {
+        if ( data )
+          {
+            clear();
+            free(data);
+          }
+
 	data = sa.data;
 	size = sa.size;
 	capacity = sa.capacity;
