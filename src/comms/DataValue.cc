@@ -9,7 +9,9 @@ namespace crisp
       : data_type ( type ),
 	value ( new uint8_t[type.width] ),
 	owns_value ( true )
-    {}
+    {
+      memset(value, 0, type.width);
+    }
 
     template <>
     DataValue<>::DataValue(const DataDeclaration<>& _data_type, DecodeBuffer& buf)
@@ -25,6 +27,8 @@ namespace crisp
 
       if ( buf.length - buf.offset >= data_type.width )
 	buf.read(value, count * data_type.width);
+      else
+        memset(value, 0, count * data_type.width);
     }
 
     template <>
