@@ -188,8 +188,9 @@ namespace crisp
           if ( ! stopped )
             {
               if ( ! ec  )    /* Dispatch the 'sent' handlers. */
-                dispatcher.dispatch(message, MessageDirection::OUTGOING);
-              else            /* Reinsert the message for another go later. */
+                dispatcher.dispatch(std::move(message), MessageDirection::OUTGOING);
+              else if ( ec.value() == boost::asio::error::try_again )
+                /* Reinsert the message for another go later. */
                 m_outgoing_queue.emplace(std::move(message));
             }
         }
@@ -286,7 +287,7 @@ namespace crisp
                 break;
             }
           else
-            dispatcher.dispatch(m, MessageDirection::INCOMING);
+            dispatcher.dispatch(std::move(m), MessageDirection::INCOMING);
         }
       fprintf(stderr, "[0x%x] Exiting receive loop.\n", THREAD_ID);
 

@@ -34,7 +34,7 @@ namespace crisp
           parameter. */
       template < typename _Node, typename _Body, typename... Args >
       static typename std::enable_if<!std::is_void<_Body>::value && !std::is_same<_Body,Message>::value, void>::type
-      call_handler(_Node& node, const Message& m, MessageDirection direction,
+      call_handler(_Node& node, Message&& m, MessageDirection direction,
                    MessageHandler<_Node, _Body>& handler, Args... args)
       {
         switch ( direction )
@@ -210,17 +210,17 @@ namespace crisp
 
     template < typename _Node >
     void
-    MessageDispatcher<_Node>::dispatch(const Message& message, MessageDirection direction) throw ( std::runtime_error )
+    MessageDispatcher<_Node>::dispatch(Message&& message, MessageDirection direction) throw ( std::runtime_error )
     {
       assert(m_node != NULL);
       switch ( message.header.type )
 	{
 	case MessageType::HANDSHAKE:
-	  detail::call_handler(*m_node, message, direction, handshake);
+	  detail::call_handler(*m_node, std::move(message), direction, handshake);
 	  break;
 
 	case MessageType::HANDSHAKE_RESPONSE:
-	  detail::call_handler(*m_node, message, direction, handshake_response);
+	  detail::call_handler(*m_node, std::move(message), direction, handshake_response);
 	  break;
 
 	case MessageType::SYNC:
@@ -236,7 +236,7 @@ namespace crisp
 	  break;
 
 	case MessageType::CONFIGURATION_RESPONSE:
-	  detail::call_handler(*m_node, message, direction, configuration_response);
+	  detail::call_handler(*m_node, std::move(message), direction, configuration_response);
 	  break;
 
 	case MessageType::SENSOR_DATA:
@@ -244,7 +244,7 @@ namespace crisp
 	  break;
 
 	case MessageType::MODULE_CONTROL:
-	  detail::call_handler(*m_node, message, direction, module_control, m_node->configuration);
+          detail::call_handler<_Node, ModuleControl, Configuration>(*m_node, std::move(message), direction, module_control, m_node->configuration);
 	  break;
 	}
     }

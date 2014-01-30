@@ -81,7 +81,7 @@ namespace crisp
     public:
       /** Invoke the appropriate handler for the given message and direction.
        */
-      void dispatch(const Message& message, MessageDirection direction) throw ( std::runtime_error );
+      void dispatch(Message&& message, MessageDirection direction) throw ( std::runtime_error );
 
       MessageHandler<_Node,Handshake> handshake;
       MessageHandler<_Node,HandshakeResponse> handshake_response;
