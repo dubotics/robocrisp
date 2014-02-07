@@ -1,7 +1,12 @@
+# Configuration file for RoboCRISP, the Clean Robotics Interface System for
+# (real) People.
 get_filename_component(SELF_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 
 # Include the targets file
 include("${SELF_DIR}/RoboCRISPTargets.cmake")
+
+# Include platform-specific cleanups
+include("${SELF_DIR}/../cmake/Platform.cmake")
 
 # Set up include directories
 get_filename_component(RoboCRISP_INCLUDE_DIR "${SELF_DIR}/../include/" ABSOLUTE)
