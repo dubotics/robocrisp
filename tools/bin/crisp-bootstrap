@@ -1,0 +1,89 @@
+#!/usr/bin/ruby
+$: << File.expand_path('../../lib/ruby', __FILE__)
+
+require 'crisp/bootstrap/Interface'
+require 'crisp/util/Option'
+
+include CRISP::Util
+
+Usage =
+  "#{$0} [OPTION]... PROGRAM MODE [PARAMETER]...]
+#{$0} [OPTION]... -s CONFIG-FILE"
+Prologue = "Bootstrapper tool for launching RoboCRISP processes."
+
+mode = :client
+config_files = []
+
+Options = [ Option.new('h', 'help', 'Show this help.') \
+            { OptionParser.show_help(Options, Usage, Prologue); exit(0) },
+            Option.new('s', 'server', 'Run in bootstrap-server mode with configuration in CONFIG-FILE.',
+                       'CONFIG-FILE') { |cfgfile| mode = :server; config_files << cfgfile },
+            Option.new('c', 'config',
+                       'Load configuration file FILE (multiple okay).  MODE is either `base\' (default)' +
+                       "\n or or \`program\'", '[MODE:]FILE') \
+            { |file| config_files << file },
+            Option.new('t', 'transport', 'Enable use of TRANSPORT[s] for bootstrap communication.',
+                       'TRANSPORT[,TRANSPORT]...') { |tpts| extra_transports.concat(tpts.split(',')) }
+          ]
+OptionParser.handle_options(Options)
+
+config = CRISP::Bootstrap::Configuration.new
+config_files.each { |c|
+  cfgmode = :base
+  fname = c
+
+  if c.include?(':')
+    ary = c.split(':', 2)
+    fname = ary[1]
+    cfgmode = ary[0].intern
+  end
+  config.load(fname, cfgmode)
+}
+
+raise 'No programs loaded; cannot continue.' if config.programs.nil?
+
+$stderr.puts("Loaded program definitions:")
+config.programs.each_value do |p|
+  $stderr.puts("    \033[1;97m#{p.name}\033[0m")
+  $stderr.puts("        uuid: %s" % p.uuid)
+  $stderr.puts("      binary: %s" % p.binary)
+  $stderr.puts("       modes:")
+  p.modes.each_value do |pm|
+    $stderr.puts("            %s%s" %
+         [pm.name.inspect,
+          if not pm.parameter_match.nil?
+            ' (matches %s)' % pm.parameter_match.name.inspect
+          else
+            ''
+          end])
+
+
+  end
+end
+
+case mode
+when :client
+  if ARGV.size < 2
+    OptionParser.show_usage(Usage)
+    exit(1)
+  end
+  program_name, mode_name, *arguments = ARGV
+  program = config.programs[program_name]
+  raise ('%s: no such program defined' % program_name) if program.nil?
+
+  # connect to bootstrap server, request that program/mode combination matching
+  # `mode` be started.  Pretend now that we have the resulting (proxied)
+  # ProcessInfo reference in `pinfo`...
+
+  raise 'Program definition mismatch' if program.uuid != pinfo.program.uuid
+
+  program.launch(mode_name.intern, pinfo, *arguments).wait()
+
+when :server
+  require 'proxy'
+  pserv = Proxy::Server.new([$stdin, $stdout])
+  pserv.add('config', config)
+  pserv.run()
+else
+  raise mode.inspect
+end

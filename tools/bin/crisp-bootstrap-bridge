@@ -1,0 +1,134 @@
+#!/usr/bin/python
+
+# CRISP bootstrapper bluetooth-communication bridge
+#
+# Copyright (C) 2014 Collin J. Sutton
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# The GNU General Public License version 2 may be found at
+# <http://www.gnu.org/licenses/gpl-2.0.html>.
+
+# NOTES
+#
+# This script advertises the CRISP bootstrapper service, listens for incoming
+# connections, and transfers control to the main bootstrapper script when a
+# connection is made, all over Bluetooth's RFCOMM virtual-serial-port
+# transport.
+#
+# When advertising a service over bluetooth, we need to load the "official"
+# RoboCRISP-bootstrap service UUID, to provide an easy way to identify devices
+# that provice the CRISP bootstrap service.
+
+SERVICE_NAME = 'CRISP Bootstrap'
+SERVICE_DESCRIPTION = 'RoboCRISP program launcher and parameter-exchange server'
+BOOTSTRAP_PROGRAM = 'crisp-bootstrap'
+XDG_RESOURCE_NAME = 'crisp/bootstrap'
+# LOCAL_UUID_FILE_NAME = 'local.uuid'
+
+from os import path
+import sys
+import uuid
+import argparse
+import subprocess
+import bluetooth as blu
+# import xdg.BaseDirectory
+
+__dir__ = path.dirname(__file__)
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-d', '--daemon', help='Run in daemon mode',
+                    action='store_true', default=False)
+
+args = parser.parse_known_args()
+daemon_mode = args[0].daemon
+
+# Check and record whether we're running from within the RoboCRISP source tree.
+in_source_tree = False
+if (path.exists(path.join(__dir__, '../../README.md')) and
+    path.basename(path.abspath(path.join(__dir__, '..'))) == 'tools'):
+    in_source_tree = True
+
+
+
+# Fetch UUIDs
+crisp_bootstrap_uuid = None
+# local_uuid = None
+
+if in_source_tree:
+    crisp_bootstrap_uuid = \
+        open(path.join(__dir__, '../crisp-bootstrap.uuid')).read()
+
+    # if daemon_mode:
+    #     xdg_data_paths = xdg.BaseDirectory.load_data_paths(XDG_RESOURCE_NAME)
+    #     local_candidate_paths = \
+    #         filter(lambda p: path.exists(path.join(p, LOCAL_UUID_FILE_NAME)),
+    #                xdg_data_paths)
+
+    #     if len(local_candidate_paths) > 0:
+    #         local_uuid = open(path.join(local_candidate_paths[0],
+    #                                     LOCAL_UUID_FILE_NAME), 'r').read()
+    #     else:
+    #         local_uuid = uuid.uuid4()
+    #         save_path = xdg.BaseDirectory.save_data_path(XDG_RESOURCE_NAME)
+    #         open(path.join(save_path,
+    #                        LOCAL_UUID_FILE_NAME), 'w').write(str(local_uuid))
+else:
+    raise NotImplementedError('UUID-file paths not yet implemented for '
+                              + 'installed script')
+
+
+if daemon_mode:
+    # print("Loaded UUIDs: service %s\n               device %s\n" % (crisp_bootstrap_uuid, local_uuid))
+    print("Service UUID: %s\n" % crisp_bootstrap_uuid)
+
+
+
+    # Set up the server socket.
+    sock = blu.BluetoothSocket(blu.RFCOMM)
+    sock.bind(("", blu.PORT_ANY))
+    sock.listen(1)
+
+    port = sock.getsockname()[1]
+
+    # Register the bootstrap service with the local bluetooth Service Discovery
+    # Protocol (SDP) server.
+    blu.advertise_service(sock, SERVICE_NAME, crisp_bootstrap_uuid,
+                          service_classes = [ blu.SERIAL_PORT_CLASS ],
+                          profiles = [ blu.SERIAL_PORT_PROFILE ],
+                          description=SERVICE_DESCRIPTION)
+
+    while True:
+        print("Waiting for connection on RFCOMM channel %d" % port)
+        client_sock, client_info = sock.accept()
+        print("Accepted connection from ", client_info)
+
+        # Run the process.
+        proc = subprocess.Popen([path.join(__dir__, BOOTSTRAP_PROGRAM)].extend(sys.argv[1:-1]),
+                                close_fds=False,
+                                stdin=client_sock.fileno(), stdout=client_sock.fileno())
+        proc.wait()
+
+
+else:                           # Client mode.
+    service_matches = blu.find_service(uuid=crisp_bootstrap_uuid,
+                                       address='localhost')
+    if len(service_matches) > 1:
+        for svc in service_matches:
+            print(svc)
+    else:
+        svc = service_matches[0]
+        del service_matches
+        print(svc)
+        sock = blu.BluetoothSocket(blu.RFCOMM)
+        sock.connect((svc['host'], svc['port']))
+    # os.execl('irb', '-I', path.join(__dir__, '../lib/ruby'), '-r', 'proxy')
+    
