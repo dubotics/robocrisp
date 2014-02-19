@@ -1,0 +1,10 @@
+[Unit]
+Description=RoboCRISP bootstrap daemon
+Requires=bluetooth.target
+After=bluetooth.target
+
+[Service]
+ExecStart=/home/pi/src/robocrisp/tools/bin/crisp-bootstrap --daemon -tbluetooth -c /home/pi/src/urc2014/robocrisp-bootstrap.yaml
+
+[Install]
+WantedBy=multi-user.target

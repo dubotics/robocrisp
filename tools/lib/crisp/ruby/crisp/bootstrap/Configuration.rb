@@ -105,7 +105,7 @@ module CRISP
               load(program_conf_path, :program, pname.to_s)
             else
               pname = pname.to_s
-              @programs[pname] = Configuration.build_program(pname, hsh, @root)
+              @programs[pname] = Configuration.build_program(pname, obj, @root)
             end
           }
         end
@@ -115,6 +115,7 @@ module CRISP
       # file.
       def self.build_parameter(name, hsh)
         Parameter.new(hsh[:name] || name, [ hsh[:type], hsh[:subtype] ].compact,
+                      hsh[:default] || nil,
                       hsh[:optional] || false)
       end
 
@@ -143,7 +144,7 @@ module CRISP
           else
             prepend_parameters
           end
-        ProgramMode.new(name.to_s, parameters, hsh[:'parameter-match'])
+        ProgramMode.new(nil, name.to_s, parameters, hsh[:'parameter-match'])
       end
 
       # Build a Program object from a hash loaded from a YAML configuration
@@ -155,11 +156,22 @@ module CRISP
           else
             []
           end
+
         modes = {}
         hsh[:modes].each_pair do |mname, mhsh|
-          modes[mname] = self.build_mode(mname.to_s, mhsh, common_parameters)
+          mname = mname.to_s
+          modes[mname] = self.build_mode(mname, mhsh, common_parameters)
         end
-        Program.new(name, hsh[:uuid], File.expand_path(hsh[:binary], root_path), modes)
+
+        default_mode = nil
+        if hsh.has_key?(:'default-mode')
+          default_mode = modes[hsh[:'default-mode']]
+        elsif modes.size == 1
+          default_mode = modes.values[0]
+        end
+
+        Program.new(name, hsh[:uuid], File.expand_path(hsh[:binary], root_path),
+                    modes, default_mode)
       end
     end                         # class Configuration
   end

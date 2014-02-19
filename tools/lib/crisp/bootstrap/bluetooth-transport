@@ -1,0 +1,239 @@
+#!/usr/bin/python3
+# -*- python -*-
+
+# CRISP bootstrapper bluetooth-communication bridge
+#
+# Copyright (C) 2014 DUBotics at the University of Washington
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# The GNU General Public License version 2 may be found at
+# <http://www.gnu.org/licenses/gpl-2.0.html>.
+
+# NOTES
+#
+# This script advertises the CRISP bootstrapper service, listens for incoming
+# connections, and transfers control to the main bootstrapper script when a
+# connection is made, all over Bluetooth's RFCOMM virtual-serial-port
+# transport.
+#
+# When advertising a service over bluetooth, we need to load the "official"
+# RoboCRISP-bootstrap service UUID, to provide an easy way to identify devices
+# that provice the CRISP bootstrap service.
+
+import sys
+import os
+from os import path
+from pprint import pprint
+import uuid
+import struct
+import ctypes
+import argparse
+import subprocess
+import bluetooth as blu
+
+
+__dir__ = path.dirname(path.abspath(__file__))
+
+
+# Determine the install prefix.
+INSTALL_PREFIX=__dir__
+for i in range(3):
+    INSTALL_PREFIX=path.dirname(INSTALL_PREFIX)
+
+
+CRISP_LIB_DIR = path.join(INSTALL_PREFIX, "lib/crisp")
+CRISP_BIN_DIR = path.join(INSTALL_PREFIX, "bin")
+CRISP_SHARE_DIR = path.join(INSTALL_PREFIX, 'share/crisp')
+
+PROGRAM_USAGE = '%s [OPTION]... [-- ARG [ARG]...]' % sys.argv[0]
+PROGRAM_DESCRIPTION = 'CRISP bootstrap adapter for Bluetooth'
+
+SERVICE_NAME = 'CRISP Bootstrap'
+SERVICE_DESCRIPTION = 'RoboCRISP program launcher and parameter-exchange server'
+BOOTSTRAP_PROGRAM = 'crisp-bootstrap'
+XDG_RESOURCE_NAME = 'crisp/bootstrap'
+# LOCAL_UUID_FILE_NAME = 'local.uuid'
+
+# Check and record whether we're running from within the RoboCRISP source tree.
+in_source_tree = False
+if (path.exists(path.join(__dir__, '../../../../README.md'))
+    and path.basename(path.abspath(path.join(__dir__, '../../..'))) == 'tools'):
+    in_source_tree = True
+    sys.path.append(path.join(CRISP_LIB_DIR, 'python'))
+else:
+    in_source_tree = False
+    raise NotImplementedError('Load paths not yet implemented for installed ' +
+                              'script')
+
+
+from crisp.util.option import *
+
+# import xdg.BaseDirectory
+
+
+daemon_mode = False
+bdaddr = None
+
+def set_daemon_mode():
+    global daemon_mode
+    daemon_mode = True
+
+def show_help(_exit, _exit_status=None):
+    OptionParser.show_help(options, PROGRAM_USAGE, PROGRAM_DESCRIPTION)
+    if _exit:
+        exit(_exit_status)
+
+
+options = [ Option('d', 'daemon', 'Run in daemon mode').handle(set_daemon_mode),
+            Option('h', 'help', 'Show this help').handle(lambda: show_help(True, 0)),
+            ]
+
+args = sys.argv[1:]
+OptionParser.handle_options(options, args)
+
+if args[0].find(':') == 2:
+    bdaddr = args[0]
+    del args[0]
+
+while '--' in args:
+    x = args.index('--')
+    del args[x]
+
+# Fetch UUIDs
+crisp_bootstrap_uuid = open(path.join(CRISP_SHARE_DIR, 'crisp-bootstrap.uuid')).read()
+
+# Make sure we have an accessible Bluetooth device
+# sock = None
+# try:
+#     sock = blu._bluetooth.hci_open_dev(-1)
+# except:
+#     sys.stderr.write("Oops!  I couldn't find a Bluetooth adapater.\n")
+#     sys.stderr.write("Trying to bring up the first available adapter now...")
+#     subprocess.check_call(['hciconfig', 'hci0', 'up'])
+#     try:
+#         sock = blu._bluetooth.hci_open_dev(-1)
+#     except:
+#         sys.stderr.write("Are you sure your Bluetooth adapter is plugged in and enabled?\n")
+#         exit(1)
+# finally:
+#     if sock != None:
+#         sock.close()
+
+if daemon_mode:
+    # Set up the server socket.
+    server_sock = blu.BluetoothSocket(blu.RFCOMM)
+    server_sock.bind(("", blu.PORT_ANY))
+    server_sock.listen(1)
+
+    # Disable simple-pairing mode (apparently all Linux kernels >= 3.0 have some
+    # kind of bug in it...)
+    # The following code will crash (
+    #
+    #     blu._bluetooth.OCF_WRITE_SIMPLE_PAIRING_MODE = 0x0056 # missing in PyBluez
+    #
+    #     # Set the simple-pairing mode to "off" (0)
+    #     cp = ctypes.create_string_buffer(1)
+    #     cp[0] = 0
+    #
+    #     blu._bluetooth.hci_send_req(server_sock,
+    #                                 blu._bluetooth.OGF_HOST_CTL,
+    #                                 ocf=blu._bluetooth.OCF_WRITE_SIMPLE_PAIRING_MODE,
+    #                                 event=0,
+    #                                 rlen=1,
+    #                                 timeout=2000,
+    #                                 params=cp)
+    # So we use this ugly alternative instead.
+    subprocess.check_call(['hciconfig', 'hci0', 'sspmode', '0']) # disable simple pairing
+
+    # Also some other useful settings
+    subprocess.check_call(['hciconfig', 'hci0', 'noauth']) # disable authentification
+    subprocess.check_call(['hciconfig', 'hci0', 'piscan']) # makes device discoverable or something
+
+
+    port = server_sock.getsockname()[1]
+
+    # Register the bootstrap service with the local bluetooth Service Discovery
+    # Protocol (SDP) server.
+    blu.advertise_service(server_sock, SERVICE_NAME, crisp_bootstrap_uuid,
+                          service_classes = [ crisp_bootstrap_uuid,
+                                              blu.SERIAL_PORT_CLASS ],
+                          profiles = [ blu.SERIAL_PORT_PROFILE ],
+                          description=SERVICE_DESCRIPTION)
+
+    while True:
+        sys.stderr.write("Waiting for connection on RFCOMM channel %d\n" % port)
+        client_sock, client_info = server_sock.accept()
+        sys.stderr.write("Accepted connection from %s\n" % str(client_info))
+
+        # Run the process.
+        proc = [path.join(CRISP_BIN_DIR, BOOTSTRAP_PROGRAM),
+                '--transport=stdio', '--daemon']
+
+        proc.extend(args)
+
+        proc = subprocess.Popen(proc,
+                                close_fds=False,
+                                stdin=client_sock.fileno(), stdout=client_sock.fileno())
+        sys.stderr.write("Subprocess exit status: %s\n" % str(proc.wait()))
+
+
+else:                           # Client mode.
+    bdaddr_desc = ''
+    if bdaddr != None:
+        bdaddr_desc = " at address %s" % bdaddr
+    sys.stderr.write("Searching for CRISP bootstrap service%s... " % bdaddr_desc)
+    sys.stderr.flush()
+
+    service_matches = blu.find_service(uuid=crisp_bootstrap_uuid, address=bdaddr)
+    matches_plural = None
+    if len(service_matches) == 1:
+        matches_plural = ''
+    else:
+        matches_plural = 'es'
+    sys.stdout.write("%d match%s found.\n" % (len(service_matches), matches_plural))
+    sys.stderr.flush()
+
+    if len(service_matches) > 1:
+        sys.stderr.write("Multiple matching services found:\n")
+        sys.stderr.flush()
+        for svc in service_matches:
+            sys.stderr.write(str(svc) + "\n")
+            sys.stderr.flush()
+    elif len(service_matches) < 1:
+        raise RuntimeError('No CRISP bootstrap service instances found.')
+    else:
+        svc = service_matches[0]
+        del service_matches
+        device_name = blu.lookup_name(svc['host'])
+
+        sys.stderr.write("Connecing to %s (%s) on port %d... " % (svc['host'], device_name, svc['port']))
+        sys.stderr.flush()
+
+        sock = blu.BluetoothSocket(blu.RFCOMM)
+        sock.connect((svc['host'], svc['port']))
+        sys.stderr.write("connected.\n")
+        sys.stderr.flush()
+
+        # Build the process command line.
+        proc = [path.join(CRISP_BIN_DIR, BOOTSTRAP_PROGRAM),
+                '--transport=stdio']
+        proc.extend(args)
+
+        # Duplicate the socket's file descriptor to the process'
+        # standard-output and standard-input (essentially replacing them)
+        os.dup2(sock.fileno(), sys.stdout.fileno())
+        os.dup2(sock.fileno(), sys.stdin.fileno())
+
+        # Replace this process with the CRISP bootstrap client. 
+        sys.stderr.write("Transferring control to stage-two bootstrap client.\n")
+        sys.stderr.flush()
+        os.execl(*proc)

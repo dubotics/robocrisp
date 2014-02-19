@@ -1,32 +1,77 @@
-#!/usr/bin/ruby
-$: << File.expand_path('../../lib/ruby', __FILE__)
+#!/usr/bin/ruby -W
 
-require 'crisp/bootstrap/Interface'
+Thread.abort_on_exception = true
+
+LibDir = File.expand_path('../../lib/crisp', __FILE__)
+BinDir = File.expand_path('..', __FILE__)
+
+TransportsDir = File.join(LibDir, "bootstrap")
+
+$: << File.join(LibDir, 'ruby')
+
+require 'crisp/bootstrap'
 require 'crisp/util/Option'
+require 'proxy'
 
 include CRISP::Util
 
 Usage =
-  "#{$0} [OPTION]... PROGRAM MODE [PARAMETER]...]
-#{$0} [OPTION]... -s CONFIG-FILE"
+  "#{$0} [OPTION]... PROGRAM[:MODE] [PARAMETER]...]
+#{$0} [OPTION]... --daemon"
 Prologue = "Bootstrapper tool for launching RoboCRISP processes."
 
+
+
 mode = :client
+transport = 'stdio'
+remote_only = false
+list_programs = false
 config_files = []
+noact = false
 
 Options = [ Option.new('h', 'help', 'Show this help.') \
             { OptionParser.show_help(Options, Usage, Prologue); exit(0) },
-            Option.new('s', 'server', 'Run in bootstrap-server mode with configuration in CONFIG-FILE.',
-                       'CONFIG-FILE') { |cfgfile| mode = :server; config_files << cfgfile },
-            Option.new('c', 'config',
-                       'Load configuration file FILE (multiple okay).  MODE is either `base\' (default)' +
-                       "\n or or \`program\'", '[MODE:]FILE') \
-            { |file| config_files << file },
-            Option.new('t', 'transport', 'Enable use of TRANSPORT[s] for bootstrap communication.',
-                       'TRANSPORT[,TRANSPORT]...') { |tpts| extra_transports.concat(tpts.split(',')) }
+            Option.new(nil, 'list-programs', 'List available programs and exit.') { list_programs = true },
+            Option.new('d', 'daemon', 'Run in server mode.') { mode = :server },
+            Option.new('r', 'remote', 'Run the command on the remote device only.') { remote_only = true },
+            Option.new('c', 'config', 'Load configuration file FILE (multiple okay).' +
+                       " MODE is either `base' (default)\n or `program'", '[MODE:]FILE') \
+            { |arg| config_files << arg },
+            Option.new('n', 'nop', 'Print the program to be run, but Don\'t actually run it.') \
+            { noact = true },
+            Option.new('t', 'transport', 'Use TRANSPORT for bootstrap communication.',
+                       'TRANSPORT') { |arg| transport = arg }
           ]
-OptionParser.handle_options(Options)
 
+OptionParser.handle_options(Options, ARGV)
+
+# Separate out any transport arguments from the transport specified.
+transport, transport_args = transport.split(':', 2)
+transport_args = transport_args.split(',') if not transport_args.nil?
+transport = transport.intern
+
+if not list_programs
+  # Execute the appropriate transport handler, if necessary.  A value of `:stdio`
+  # for `transport` indicates that this process was launched by one of the
+  # transport handler scripts (rather than by the user).
+  if transport != :stdio
+    transport_file = File.join(TransportsDir, "#{transport.to_s}-transport")
+    raise "#{transport.intern}: no such transport availabe" if not File.exist?(transport_file)
+
+    transport_cmd = [ transport_file ]
+    transport_cmd << '--daemon' if mode == :server # daemon mode for the transport
+    transport_cmd.concat(transport_args) if not transport_args.nil? and not transport_args.empty?
+    transport_cmd << '--'
+    transport_cmd << '--remote' if remote_only
+    config_files.each { |cf| transport_cmd << "--config=#{cf}" }
+    transport_cmd.concat(ARGV)
+
+    Process.exec(*transport_cmd)
+  end
+end
+
+
+# Load all configuration files specified on the command line.
 config = CRISP::Bootstrap::Configuration.new
 config_files.each { |c|
   cfgmode = :base
@@ -40,50 +85,126 @@ config_files.each { |c|
   config.load(fname, cfgmode)
 }
 
-raise 'No programs loaded; cannot continue.' if config.programs.nil?
 
-$stderr.puts("Loaded program definitions:")
-config.programs.each_value do |p|
-  $stderr.puts("    \033[1;97m#{p.name}\033[0m")
-  $stderr.puts("        uuid: %s" % p.uuid)
-  $stderr.puts("      binary: %s" % p.binary)
-  $stderr.puts("       modes:")
-  p.modes.each_value do |pm|
-    $stderr.puts("            %s%s" %
-         [pm.name.inspect,
-          if not pm.parameter_match.nil?
-            ' (matches %s)' % pm.parameter_match.name.inspect
-          else
-            ''
-          end])
-
-
+if config.programs.nil?
+  raise 'No programs loaded; cannot continue.'
+else
+  if list_programs
+    $stderr.puts("Loaded program definitions:")
+    config.programs.each_value do |p|
+      $stderr.puts("    \033[1;97m#{p.name}\033[0m")
+      $stderr.puts("        uuid: %s" % p.uuid)
+      $stderr.puts("      binary: %s" % p.binary)
+      $stderr.puts("       modes:")
+      p.modes.each_value do |pm|
+        $stderr.puts("            %s%s" %
+                     [pm.name.inspect,
+                      if not pm.parameter_match.nil?
+                        ' (matches %s)' % pm.parameter_match.name.inspect
+                      else
+                        ''
+                      end])
+        prefix = "            "
+        $stderr.puts(prefix + 'Parameters:')
+        prefix += '    '
+        pm.parameters.each { |prm|
+          $stderr.puts(prefix + '%s (%s%s%s)' %
+                       [ prm.name, prm.type, prm.subtype.nil? ? '' : ':' + prm.subtype,
+                         prm.default.nil? ? '' : ", default %s" % prm.default.to_s ])
+        }
+      end
+    end
+    exit(0)
   end
 end
+proxy_args = []
+case transport
+when :stdio
+  proxy_args << [$stdin, $stdout]
+else
+  raise '%s: unhandled transport name' % transport.to_s
+end
+
 
 case mode
 when :client
-  if ARGV.size < 2
-    OptionParser.show_usage(Usage)
+  if ARGV.size < 1
+    OptionParser.show_usage(Usage, $stderr)
     exit(1)
   end
-  program_name, mode_name, *arguments = ARGV
-  program = config.programs[program_name]
-  raise ('%s: no such program defined' % program_name) if program.nil?
 
-  # connect to bootstrap server, request that program/mode combination matching
-  # `mode` be started.  Pretend now that we have the resulting (proxied)
-  # ProcessInfo reference in `pinfo`...
+  program_name, *arguments = ARGV
+  mode_name = nil
+  if program_name.include?(':')
+    ary = program_name.split(':', 2)
+    program_name = ary[0]
+    mode_name = ary[1]
+  end
 
-  raise 'Program definition mismatch' if program.uuid != pinfo.program.uuid
+  # Connect to the peer and fetch its bootstrap configuration.
+  cli = Proxy::Client.new(*proxy_args)
+  $stderr.print('Fetching remote configuration... ')
+  remote_config = cli['config']
+  $stderr.puts('okay.')
 
-  program.launch(mode_name.intern, pinfo, *arguments).wait()
+  # Fetch the local and remote program references and ensure that they refer to
+  # the same program.
+  raise '%s: no such program defined' % program_name if
+    not config.programs.has_key?(program_name)
+  raise '%s: no such program defined on remote device' % program_name if
+    not remote_config.programs.has_key?(program_name)
+
+  program, remote_program = [config,remote_config].
+    collect { |c| c.programs[program_name] }
+
+  raise 'Program definition mismatch' if program.uuid != remote_program.uuid
+
+  # Use the user-supplied script arguments to select the local mode, and use
+  # the matched-mode name for that mode to select the remote mode.
+  raise 'Program "%s" has no default mode and no mode was supplied' % program_name if
+    mode_name.nil? and program.default_mode.nil?
+
+  if mode_name.nil?
+    mode = program.default_mode
+    remote_mode =
+      remote_program.modes[mode.name].parameter_match ||
+      remote_program.default_mode
+  else
+    mode = program.modes[mode_name]
+    remote_mode = remote_program.modes[mode.parameter_match.name]
+  end
+
+  begin
+    remote_invoke_info = remote_mode.prepare(*arguments)
+    invoke_info = nil
+    invoke_info = mode.prepare(remote_invoke_info, *arguments) if not remote_only
+
+    $stderr.puts("remote: %s" % remote_invoke_info.to_ary.collect \
+                 { |s| s =~ /[ "'\\]/ ? s.inspect : s }.join(' '))
+    remote_invoke_info.exec! if not noact
+    cli.close()
+
+    ary = invoke_info.to_ary
+    $stderr.puts(" local: %s" % invoke_info.to_ary.collect \
+                 { |s| s =~ /[ "'\\]+/ ? s.inspect : s }.join(' '))
+    if not noact and not remote_only
+      sleep(0.25)                 # Give the remote program (likely a server) time to initialize.
+      invoke_info.exec!
+    end
+  rescue => err
+    $stderr.puts('%u: %s' % [Process.pid, err.inspect])
+    $stderr.puts('    ' + err.backtrace.join("\n    "))
+    raise err
+  end
+
+
 
 when :server
   require 'proxy'
-  pserv = Proxy::Server.new([$stdin, $stdout])
+  pserv = Proxy::Server.new(*proxy_args)
   pserv.add('config', config)
   pserv.run()
+
 else
-  raise mode.inspect
+  $stderr.puts(mode.inspect)
 end

@@ -6,3 +6,7 @@ build
 
 # ...generated HTML documentation.
 doc/html
+
+
+# Python bytecode caches
+**/__pycache__

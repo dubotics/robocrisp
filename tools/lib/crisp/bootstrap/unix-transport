@@ -1,0 +1,65 @@
+#!/usr/bin/ruby -W
+
+LibDir = File.expand_path('../..', __FILE__)
+LibRubyDir = File.join(LibDir, 'ruby')
+BinDir = File.expand_path('../../bin', LibDir)
+ClientBinary = File.join(BinDir, 'crisp-bootstrap')
+
+$: << LibRubyDir
+
+require 'socket'
+require 'fileutils'
+require 'crisp/util/Option'
+
+include CRISP::Util
+
+Usage = "#{$0} [OPTION...] SOCKETFILE [-- ARG [ARG]...]"
+Description = 'CRISP bootstrap adapter for UNIX socket files'
+
+daemon_mode = false
+
+Options = [ Option.new('h', 'help', 'Show this help') {
+              OptionParser.show_help(Options, Usage, Description, $stdout)
+              exit(0) },
+            Option.new('d', 'daemon', 'Run in daemon mode') { daemon_mode = true }
+          ]
+OptionParser.handle_options(Options, ARGV)
+
+transport_args = []
+subprocess_args = []
+if ARGV.include?('--')
+  idx = ARGV.index('--')
+  transport_args = ARGV[0...idx]
+  subprocess_args = ARGV[(idx+1)..-1]
+else
+  transport_args = ARGV
+end
+
+if transport_args.length < 1
+  OptionParser.show_usage(Usage, $stderr)
+  exit(1)
+end
+
+
+if daemon_mode
+  begin
+    UNIXServer.open(*transport_args) do |sock|
+      while true
+        client_sock = sock.accept()
+        child_args = [ ClientBinary, '--daemon', '--transport=stdio' ]
+        child_args.concat(subprocess_args) if not subprocess_args.empty?
+
+        child_pid = Process.spawn(*child_args, :in => client_sock, :out => client_sock)
+        $stderr.puts(Process.wait(child_pid))
+      end
+    end
+  ensure
+    FileUtils.rm_rf(transport_args[0])
+  end
+else
+  child_args = [ ClientBinary, '--transport=stdio' ]
+  child_args.concat(subprocess_args) if not subprocess_args.empty?
+
+  cli = UNIXSocket.new(*transport_args)
+  Process.exec(*child_args, :in => cli, :out => cli)
+end
