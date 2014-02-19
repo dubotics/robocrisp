@@ -62,8 +62,21 @@ namespace crisp
       std::atomic<bool> stopped;
 
 
+      /** Maximum number of simultaneous live connections.  Zero is
+          unlimited. */
+      size_t max_simultaneous_connections;
+
+      /** Total (cumulative) number of connections after which the server will
+          shut down.  Unlimited if 0.  */
+      size_t max_cumulative_connections;
+
+      /** Total number of connections seen by this server instance so far. */
+      size_t num_cumulative_connections;
+
       NodeServer(boost::asio::io_service& _io_service,
-                 const typename Protocol::endpoint& listen_endpoint);
+                 const typename Protocol::endpoint& listen_endpoint,
+                 size_t _max_simultaneous_connections = 0,
+                 size_t _max_cumulative_connections = 0);
 
       ~NodeServer();
 

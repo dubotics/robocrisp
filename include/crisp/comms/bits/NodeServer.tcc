@@ -11,7 +11,9 @@ namespace crisp
   {
     template < typename _Node >
     NodeServer<_Node>::NodeServer(boost::asio::io_service& _io_service,
-                           const typename NodeServer<_Node>::Protocol::endpoint& listen_endpoint)
+                                  const typename NodeServer<_Node>::Protocol::endpoint& listen_endpoint,
+                                  size_t _max_simultaneous_connections,
+                                  size_t _max_cumulative_connections)
       : io_service ( _io_service ),
         acceptor ( io_service, listen_endpoint ),
         nodes ( ),
@@ -20,7 +22,10 @@ namespace crisp
         dispatcher ( ),
         run_thread ( ),
         halting ( ),
-        stopped ( false )
+        stopped ( false ),
+        max_simultaneous_connections ( 0 ),
+        max_cumulative_connections ( _max_cumulative_connections ),
+        num_cumulative_connections ( 0 )
     {
       halting.clear();
     }
@@ -80,8 +85,13 @@ namespace crisp
 
 
       fputs("Entering `accept()` loop.\n", stderr);
-      while ( acceptor.is_open() && ! stopped )
+      while ( (num_cumulative_connections < max_cumulative_connections ||
+               max_cumulative_connections == 0) &&
+              acceptor.is_open() && ! stopped )
         {
+          /* TODO: block until nodes.size() < max_simultaneous_connections
+             if max_simultaneous_connections != 0 */
+
           boost::system::error_code ec;
           typename Protocol::endpoint endpoint;
 
@@ -99,6 +109,7 @@ namespace crisp
             }
           else
             {
+              ++num_cumulative_connections;
               std::cerr << "Accepted connection from " << endpoint << std::endl;
 
               /* We've got a connection.  Create a new protocol-node on the
@@ -109,12 +120,12 @@ namespace crisp
               node->dispatcher = dispatcher;
               node->dispatcher.set_target(*node);
 
-              /* Launch the node's worker threads. */
               {
                 std::unique_lock<std::mutex> lock ( nodes_mutex );
                 nodes.insert(node);
               }
 
+              /* Launch the node's worker threads. */
               service.post(std::bind(&Node::launch, node));
             }
         }
