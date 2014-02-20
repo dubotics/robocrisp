@@ -17,6 +17,7 @@
 #include <crisp/util/Scheduler.hh>
 #include <crisp/util/WorkerObject.hh>
 #include <crisp/util/SharedQueue.hh>
+#include <crisp/util/Signal.hh>
 
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/spawn.hpp>
@@ -46,6 +47,7 @@ namespace crisp
     public:
       typedef _Protocol Protocol;
       typedef typename Protocol::socket Socket;
+      typedef crisp::util::Signal<void(const BasicNode&)> DisconnectSignal;
 
     private:
       friend class MessageDispatcher<BasicNode>;
@@ -73,6 +75,13 @@ namespace crisp
 
       std::mutex m_halt_mutex;
       std::condition_variable m_halt_cv;
+
+      /** Signal emitted when the connection is closed. */
+      DisconnectSignal  m_disconnect_signal;
+
+      /** Set to `true` when the disconnect signal has been emitted, to avoid
+          emitting it twice (send AND receive loops can both trigger a halt).  */
+      std::atomic_flag m_disconnect_emitted;
 
     public:
       /** Public "node-is-halting-or-stopped" flag. */
@@ -150,6 +159,13 @@ namespace crisp
        * @param m Message to send.
        */
       void send(Message&& m);
+
+      /** Register a function to be called when the connection ends.
+       *
+       * @param func The function to be called when the connection ends.
+       */
+      typename DisconnectSignal::Connection
+      on_disconnect(typename DisconnectSignal::Function func);
 
     protected:
       /** Send outgoing messages until the socket is closed.

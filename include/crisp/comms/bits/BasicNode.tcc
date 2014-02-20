@@ -30,6 +30,8 @@ namespace crisp
         m_stopped ( false ),
         m_halt_mutex ( ),
         m_halt_cv ( ),
+        m_disconnect_signal ( ),
+        m_disconnect_emitted ( ),
         stopped ( m_stopped ),
         scheduler ( m_io_service ),
         role ( _role ),
@@ -37,11 +39,21 @@ namespace crisp
         dispatcher ( *this )
     {
       m_halting.clear();
+      m_disconnect_emitted.clear();
     }
 
     template < typename _Protocol >
     BasicNode<_Protocol>::~BasicNode()
     { halt(true); }
+
+
+    template < typename _Protocol >
+    typename BasicNode<_Protocol>::DisconnectSignal::Connection
+    BasicNode<_Protocol>::on_disconnect(typename BasicNode<_Protocol>::DisconnectSignal::Function func)
+    {
+      return m_disconnect_signal.connect(func);
+    }
+
 
     template < typename _Protocol >
     void
@@ -99,6 +111,9 @@ namespace crisp
         {
           std::unique_lock<std::mutex> lock ( m_halt_mutex );
           m_stopped = true;
+
+          if ( ! m_disconnect_emitted.test_and_set() )
+            m_disconnect_signal.emit(*this);
 
           if ( ! can_halt() && ! force_try )
             {               /* Can't halt from this thread. */
