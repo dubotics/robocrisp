@@ -195,6 +195,9 @@ when :client
     $stderr.puts('%u: %s' % [Process.pid, err.inspect])
     $stderr.puts('    ' + err.backtrace.join("\n    "))
     raise err
+  rescue Interrupt
+  ensure
+    cli.close() if cli.connection_open?
   end
 
 

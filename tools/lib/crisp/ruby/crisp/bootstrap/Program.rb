@@ -142,21 +142,31 @@ module CRISP
           }
           ProgramInvocationInfo.new(@program, self, parameter_values, parameters_hash)
         else
-          # Inform the user what went wrong.
+          # Build an error string indicationg what went wrong.
+          reason = nil
           case break_reason
           when :nocandidates
-            $stderr.puts("\033[1;31merror:\033[0m insufficient arguments supplied for mode \"#{@name}\"")
+            reason = "insufficient arguments supplied for mode \"#{@name}\""
           when :toomanycandidates
-            $stderr.puts("\033[1;31merror:\033[0m failed to automatically select unspecified arguments for mode \"#{@name}\"")
+            reason = "failed to automatically select unspecified arguments for mode \"#{@name}\""
           end
-          $stderr.puts("Remaining arguments are:")
-          @parameters[break_index..-1].each { |p|
+
+          candidates_ary = @parameters[break_index..-1].collect { |p|
             candidates = p.candidates
-            $stderr.puts("    %s (candidate%s: %s)" %
-                         [ p.name, num_candidates(candidates) == 1 ? '' : 's',
-                           candidates.nil? ? 'none' : format_candidate_values(candidates) ])
+            "    %s (candidate%s: %s)" %
+            [ p.name, num_candidates(candidates) == 1 ? '' : 's',
+              (candidates.nil? or candidates.empty?) ? 'none' : format_candidate_values(candidates) ]
           }
-          raise 'Argument selection failed.'
+
+          # Print something to the local error stream
+          $stderr.puts("\033[1;31merror:\033[0m #{reason}")
+          $stderr.puts("Remaining arguments are:")
+          candidates_ary.each { |cs| $stderr.puts(cs) }
+
+          # Raise an exception so the error information will be proxied through
+          # to the remote host if this method was called by remote proxy.
+          raise "Argument selection failed: #{reason}.\nRemaining arguments are:\n" +
+            candidates_ary.join("\n")
         end
       end
 
@@ -172,7 +182,11 @@ module CRISP
       def num_candidates(cnds)
         case cnds
         when Array
-          cnds.size
+          if cnds.size == 1 and cnds[0].kind_of?(Range)
+            num_candidates(cnds[0])
+          else
+            cnds.size
+          end
         when Range
           cnds.count
         end
