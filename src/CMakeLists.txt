@@ -52,6 +52,7 @@ if(RoboCRISP_BUILD_INPUT)
     input/Axis.cc
     input/Button.cc
     input/Controller.cc
+    input/MultiplexController.cc
     )
 
   # Add platform-specific sources here.

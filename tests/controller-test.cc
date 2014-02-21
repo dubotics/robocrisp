@@ -1,4 +1,5 @@
 #include <crisp/input/EvDevController.hh>
+#include <crisp/input/MultiplexController.hh>
 #include <csignal>
 #include <thread>
 
@@ -33,31 +34,38 @@ main(int argc, char* argv[])
 {
   if ( argc < 2 )
     {
-      fprintf(stderr, "Usage: %s EVDEV\n", argv[0]);
+      fprintf(stderr, "Usage: %s EVDEV [EVDEV]...\n", argv[0]);
       return 1;
     }
   using namespace crisp::input;
 
-  EvDevController controller ( argv[1] );
-  for ( Axis& axis : controller.axes )
+  std::shared_ptr<Controller> controller ( nullptr );
+  if ( argc > 2 )
     {
-      if ( axis.type == Axis::Type::ABSOLUTE )
-        axis.set_coefficients({ 1, 0, 0, 0 }); /* y = x³ */
-      axis.hook([&](const Axis& _axis, Axis::State state)
-		{ fprintf(stderr, "[%2d](%s) raw %8d | mapped %.5f\n", axis.id, axis.get_name(), state.raw_value, state.value); });
+      MultiplexController* mc = new MultiplexController;
+      controller.reset(mc);
+      for ( size_t i = 1; i < argc; ++i )
+        mc->add(std::make_shared<EvDevController>(argv[i]));
     }
-  for ( Button& button : controller.buttons )
+  else
+    controller.reset(new EvDevController(argv[1]));
+
+  for ( Axis& axis : controller->axes )
+    axis.hook([&](const Axis& _axis, Axis::State state)
+              { fprintf(stderr, "[%2d](%s) raw %8d | mapped %.5f\n", axis.id, axis.get_name(), state.raw_value, state.value); });
+
+  for ( Button& button : controller->buttons )
     button.hook([&](const Button& _button, Button::State state)
                 { fprintf(stderr, "[%2d](%s) %s\n", button.id, button.get_name(),
                           state.value == ButtonState::PRESSED
                           ? "pressed" : "released"); });
 
   std::atomic<bool> run_flag ( true );
-  std::thread controller_thread ( [&]() { controller.run(run_flag); });
+  std::thread controller_thread ( [&]() { controller->run(); });
 
   wait_for_signal();
 
-  run_flag = false;
+  controller->stop();
   controller_thread.join();
   
   return 0;

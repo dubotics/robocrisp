@@ -20,6 +20,7 @@ namespace crisp
      */
     template < typename _T, typename _RawValue, typename _Value >
     class MappedEventSource
+      : public std::enable_shared_from_this<_T>
     {
     public:
       typedef _T Type;	  	/**< Derived-class type. */
