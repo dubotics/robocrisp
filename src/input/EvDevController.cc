@@ -1,4 +1,5 @@
 #include <fcntl.h>
+#include <sys/types.h>
 #include <linux/input.h>
 #include <crisp/input/EvDevController.hh>
 
@@ -110,47 +111,57 @@ namespace crisp
     ssize_t
     EvDevController::wait_for_event(struct input_event* ev)
     {
-      return read(m_fd, ev, sizeof(struct input_event));
+      fd_set set;
+      FD_ZERO(&set);
+      FD_SET(m_fd, &set);
+      int r ( 0 );
+      if ( (r = select(FD_SETSIZE, &set, NULL, NULL, NULL)) > 0 )
+        return read(m_fd, ev, sizeof(struct input_event));
+      else
+        return r;
+    }
+
+    void
+    EvDevController::stop()
+    {
+      close(m_fd);
     }
 
 
     void
-    EvDevController::run(const std::atomic<bool>& run_flag)
+    EvDevController::run()
     {
       struct input_event ev;
-      while ( run_flag )
-	{
-	  if ( wait_for_event(&ev) > 0 )
-	    {
-	      switch ( ev.type )
-		{
-                case EV_REL:
-		case EV_ABS:
-		  {             /* <-- need these brackets so that the iterator
-                                   (next line) is initialized properly. */
-		    auto iter ( m_axis_map.find(std::make_pair(ev.type, ev.code)) );
-		    if ( iter != m_axis_map.end() )
-		      axes[iter->second].post(ev.value);
-		  }
-		  break;
+      while ( wait_for_event(&ev) > 0 )
+        {
+          switch ( ev.type )
+            {
+            case EV_REL:
+            case EV_ABS:
+              {             /* <-- need these brackets so that the iterator
+                               (next line) is initialized properly. */
+                auto iter ( m_axis_map.find(std::make_pair(ev.type, ev.code)) );
+                if ( iter != m_axis_map.end() )
+                  axes[iter->second].post(ev.value);
+              }
+              break;
 
-                case EV_KEY:
-                  {
-                    auto iter ( m_button_map.find(ev.code) );
-                    if ( iter != m_button_map.end() )
-                      buttons[iter->second].post(ev.value);
-                    break;
-                  }
+            case EV_KEY:
+              {
+                auto iter ( m_button_map.find(ev.code) );
+                if ( iter != m_button_map.end() )
+                  buttons[iter->second].post(ev.value);
+                break;
+              }
 
-		default:
-		  if ( ev.type != EV_SYN )
-		    fprintf(stderr, "got %s event: code \"%s\", value %d (0x%x)\n",
-                            libevdev_event_type_get_name(ev.type), libevdev_event_code_get_name(ev.type, ev.code),
-                            ev.value, ev.value);
-		  break;
-		}
-	    }
-	}
+            default:
+              if ( ev.type != EV_SYN )
+                fprintf(stderr, "got %s event: code \"%s\", value %d (0x%x)\n",
+                        libevdev_event_type_get_name(ev.type), libevdev_event_code_get_name(ev.type, ev.code),
+                        ev.value, ev.value);
+              break;
+            }
+        }
     }
   }
 }

@@ -62,10 +62,13 @@ namespace crisp
       EvDevController(const char* evdev) throw ( std::system_error );
       virtual ~EvDevController();
 
-      /** Read events from the underlying hardware while a condition flag is set.  This function
-       *  blocks execution.
+      /** Read events from the underlying hardware.  This function blocks
+       *  execution.
        */
-      virtual void run(const std::atomic<bool>& run_flag);
+      virtual void run();
+
+      /** Stop reading events from the underlying hardware. */
+      virtual void stop();
     };
   }
 }

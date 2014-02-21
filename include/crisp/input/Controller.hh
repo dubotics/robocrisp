@@ -26,13 +26,14 @@ namespace crisp
       Controller();
       virtual ~Controller();
  
-      /** Read events from the underlying hardware while a condition flag is set.  This function
-       *  blocks execution.
-       *
-       * @param run_flag A flag that will be set to `true` while the controller's
-       *   event-read loop should keep running.
+      /** Read events from the underlying hardware.  This function blocks
+       *  execution of the thread in which it is called.
        */
-      virtual void run(const std::atomic<bool>& run_flag) = 0;
+      virtual void run() = 0;
+
+      /** Stop reading events from the underlying hardware.  The implementation
+          of this function must be thread-safe. */
+      virtual void stop() = 0;
 
       DereferencedArrayAccessor<Axis,std::shared_ptr<Axis> > axes;
       DereferencedArrayAccessor<Button,std::shared_ptr<Button> > buttons;
