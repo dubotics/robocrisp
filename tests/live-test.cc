@@ -103,7 +103,7 @@ main(int argc, char* argv[])
 
   if ( mode == Mode::SERVER )
     {
-      crisp::comms::NodeServer<Node> server ( service, target_endpoint );
+      crisp::comms::NodeServer<Node> server ( service, target_endpoint, 1 );
 
       /* Set up the server's interface configuration with the following test config. */
       using namespace crisp::comms::keywords;
