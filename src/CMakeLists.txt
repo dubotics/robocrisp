@@ -63,7 +63,9 @@ if(RoboCRISP_BUILD_INPUT)
   # Define the target.
   add_library(crisp-input STATIC ${RoboCRISP_INPUT_SOURCES})
   target_link_libraries(crisp-input
-    ${Boost_SYSTEM_LIBRARY_RELEASE})
+    ${Boost_SYSTEM_LIBRARY_RELEASE}
+    ${EVDEV_LIBRARIES}
+    )
 
   # Set platform-specific properties here.
   if(UNIX AND NOT APPLE)
