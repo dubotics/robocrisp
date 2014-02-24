@@ -96,7 +96,7 @@ namespace crisp
       m_halt_action =
         scheduler.set_timer(std::chrono::seconds(5),
                             [this](crisp::util::ScheduledAction&)
-                            { fprintf(stderr, "[0x%x] Handshake not completed before timer expired.  Halting.\n",
+                            { fprintf(stderr, "[0x%x][Node] Handshake not completed before timer expired.  Halting.\n",
                                       THREAD_ID);
                               halt(); });
 
@@ -126,7 +126,7 @@ namespace crisp
               return false;
             }
 
-          fprintf(stderr, "[0x%x] Halting... ", THREAD_ID);
+          fprintf(stderr, "[0x%x][Node] Halting... ", THREAD_ID);
           fflush_unlocked(stderr); /* make sure we print diagnostics in the
                                       right order. */
 
@@ -176,7 +176,7 @@ namespace crisp
     {
       bool aborted ( false );
 
-      fprintf(stderr, "[0x%x] Entered send loop.\n", THREAD_ID);
+      fprintf(stderr, "[0x%x][Node] Entered send loop.\n", THREAD_ID);
       while ( ! m_stopped )
         {
           /* Fetch the next message to send, waiting if necessary. */
@@ -220,7 +220,7 @@ namespace crisp
                 m_outgoing_queue.emplace(std::move(message));
             }
         }
-      fprintf(stderr, "[0x%x] Exiting send loop.\n", THREAD_ID);
+      fprintf(stderr, "[0x%x][Node] Exiting send loop.\n", THREAD_ID);
 
       if ( ! m_stopped )
         m_io_service.post(std::bind(&BasicNode::halt, this, false));
@@ -247,7 +247,7 @@ namespace crisp
     void
     BasicNode<_Protocol>::receive_loop(boost::asio::yield_context yield)
     {
-      fprintf(stderr, "[0x%x] Entered receive loop.\n", THREAD_ID);
+      fprintf(stderr, "[0x%x][Node] Entered receive loop.\n", THREAD_ID);
 
       crisp::util::Buffer rdbuf ( BUFSIZ );
 
@@ -316,7 +316,7 @@ namespace crisp
           else
             dispatcher.dispatch(std::move(m), MessageDirection::INCOMING);
         }
-      fprintf(stderr, "[0x%x] Exiting receive loop.\n", THREAD_ID);
+      fprintf(stderr, "[0x%x][Node] Exiting receive loop.\n", THREAD_ID);
 
       if ( ! m_stopped )
         m_io_service.post(std::bind(&BasicNode::halt, this, false));
