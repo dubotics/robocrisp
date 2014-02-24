@@ -30,7 +30,7 @@ namespace crisp
         m_stopped ( false ),
         m_halt_mutex ( ),
         m_halt_cv ( ),
-        m_disconnect_signal ( ),
+        m_disconnect_signal ( _socket.get_io_service() ),
         m_disconnect_emitted ( ),
         stopped ( m_stopped ),
         scheduler ( m_io_service ),
