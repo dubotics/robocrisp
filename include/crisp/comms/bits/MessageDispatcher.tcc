@@ -133,28 +133,44 @@ namespace crisp
       sync.sent
         .connect([&](_Node&)
                  {
-                   fprintf(stderr, "[0x%0x] \033[1;34mSYNC\033[0m out\n", THREAD_ID);
+                   if ( isatty(STDERR_FILENO) )
+                     fprintf(stderr, "[0x%0x] \033[1;34mSYNC\033[0m out\n", THREAD_ID);
+                   else
+                     fprintf(stderr, "[0x%0x] SYNC out\n", THREAD_ID);
                  });
 
       sync.received
         .connect([&](_Node&)
                  {
-                   fprintf(stderr, "[0x%0x] \033[1;34mSYNC\033[0m in\n", THREAD_ID);
+                   if ( isatty(STDERR_FILENO) )
+                     fprintf(stderr, "[0x%0x] \033[1;34mSYNC\033[0m in\n", THREAD_ID);
+                   else
+                     fprintf(stderr, "[0x%0x] SYNC in\n", THREAD_ID);
                  });
 
 
       handshake.sent
         .connect([&](_Node&, const Handshake& hs)
                  {
-                   fprintf(stderr, "[0x%0x] \033[1;33mHandshake sent:\033[0m requested role \033[97m%s\033[0m\n", THREAD_ID,
-                           hs.role == NodeRole::MASTER ? "MASTER" : "SLAVE");
+                   if ( isatty(STDERR_FILENO) )
+                     fprintf(stderr, "[0x%0x] \033[1;33mHandshake sent:\033[0m requested role \033[97m%s\033[0m\n", THREAD_ID,
+                             hs.role == NodeRole::MASTER ? "MASTER" : "SLAVE");
+                   else
+                     fprintf(stderr, "[0x%0x] Handshake sent: requested role %s\n", THREAD_ID,
+                             hs.role == NodeRole::MASTER ? "MASTER" : "SLAVE");
+
                  });
 
       handshake.received
         .connect([&](_Node& _node, const Handshake& hs)
                  {
-                   fprintf(stderr, "[0x%0x] \033[1;33mHandshake received:\033[0m requests role \033[97m%s\033[0m\n", THREAD_ID,
-                           hs.role == NodeRole::MASTER ? "MASTER" : "SLAVE");
+                   if ( isatty(STDERR_FILENO) )
+                     fprintf(stderr, "[0x%0x] \033[1;33mHandshake received:\033[0m requests role \033[97m%s\033[0m\n", THREAD_ID,
+                             hs.role == NodeRole::MASTER ? "MASTER" : "SLAVE");
+                   else
+                     fprintf(stderr, "[0x%0x] Handshake received: requests role %s\n", THREAD_ID,
+                             hs.role == NodeRole::MASTER ? "MASTER" : "SLAVE");
+
 
                    HandshakeAcknowledge ack;
 
@@ -173,9 +189,15 @@ namespace crisp
       handshake_response.received
         .connect([&](_Node& _node, const HandshakeResponse& hs)
                  {
-                   fprintf(stderr, "[0x%0x] \033[1;33mHandshake response received:\033[0m remote node %s role \033[97m%s\033[0m\n", THREAD_ID,
-                           hs.acknowledge == HandshakeAcknowledge::ACK ? "\033[32maccepts\033[0m" : "\033[31mrejects\033[0m",
-                           hs.role == NodeRole::MASTER ? "MASTER" : (hs.role == NodeRole::SLAVE ? "SLAVE" : "ERROR"));
+                   if ( isatty(STDERR_FILENO) )
+                     fprintf(stderr, "[0x%0x] \033[1;33mHandshake response received:\033[0m remote node %s role \033[97m%s\033[0m\n", THREAD_ID,
+                             hs.acknowledge == HandshakeAcknowledge::ACK ? "\033[32maccepts\033[0m" : "\033[31mrejects\033[0m",
+                             hs.role == NodeRole::MASTER ? "MASTER" : (hs.role == NodeRole::SLAVE ? "SLAVE" : "ERROR"));
+                   else
+                     fprintf(stderr, "[0x%0x] Handshake response received: remote node %s role %s\n", THREAD_ID,
+                             hs.acknowledge == HandshakeAcknowledge::ACK ? "accepts" : "rejects",
+                             hs.role == NodeRole::MASTER ? "MASTER" : (hs.role == NodeRole::SLAVE ? "SLAVE" : "ERROR"));
+
 
 #ifndef NODE_NO_DISPATCHER_CONTROL
                    if ( hs.acknowledge == HandshakeAcknowledge::ACK )
@@ -196,27 +218,40 @@ namespace crisp
       handshake_response.sent
         .connect([&](_Node&, const HandshakeResponse& hs)
                  {
-                   fprintf(stderr, "[0x%0x] \033[1;33mHandshake response sent:\033[0m %s role \033[97m%s\033[0m\n", THREAD_ID,
-                           hs.acknowledge == HandshakeAcknowledge::ACK ? "\033[32maccepting\033[0m" : "\033[31mrejecting\033[0m",
-                           hs.role == NodeRole::MASTER ? "MASTER" : "SLAVE");
+                   if ( isatty(STDERR_FILENO) )
+                     fprintf(stderr, "[0x%0x] \033[1;33mHandshake response sent:\033[0m %s role \033[97m%s\033[0m\n", THREAD_ID,
+                             hs.acknowledge == HandshakeAcknowledge::ACK ? "\033[32maccepting\033[0m" : "\033[31mrejecting\033[0m",
+                             hs.role == NodeRole::MASTER ? "MASTER" : "SLAVE");
+                   else
+                     fprintf(stderr, "[0x%0x] Handshake response sent: %s role %s\n", THREAD_ID,
+                             hs.acknowledge == HandshakeAcknowledge::ACK ? "accepting" : "rejecting",
+                             hs.role == NodeRole::MASTER ? "MASTER" : "SLAVE");
+
                  });
 
 
       configuration_query.received
         .connect([&](_Node& _node)
-                 { _node.send(_node.configuration); });
+                 { _node.send(Configuration(_node.configuration)); });
 
 
       module_control.sent
         .connect([&](_Node&, const ModuleControl&)
                  {
-                   fprintf(stderr, "[0x%0x] \033[1;33mModule-control sent.\033[0m\n", THREAD_ID);
+                   if ( isatty(STDERR_FILENO) )
+                     fprintf(stderr, "[0x%0x] \033[1;33mModule-control sent.\033[0m\n", THREAD_ID);
+                   else
+                     fprintf(stderr, "[0x%0x] Module-control sent.\n", THREAD_ID);
                  });
 
       module_control.received
         .connect([&](_Node&, const ModuleControl& ctl)
                  {
-                   fprintf(stderr, "[0x%0x] \033[1;33mModule-control received.\033[0m\n", THREAD_ID);
+                   if ( isatty(STDERR_FILENO) )
+                     fprintf(stderr, "[0x%0x] \033[1;33mModule-control received.\033[0m\n", THREAD_ID);
+                   else
+                     fprintf(stderr, "[0x%0x] Module-control received.\n", THREAD_ID);
+
                    for ( const ModuleControl::ValuePair& pair : ctl.values )
                      {
                        fprintf(stderr, "    -> %s\n", pair.input->name);
