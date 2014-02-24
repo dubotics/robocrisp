@@ -74,7 +74,7 @@ namespace crisp
     bool
     BasicNode<_Protocol>::launch()
     {
-      if ( running() )
+      if ( running() || m_stopped )
         return false;
 
       /* NOTA BENE: for some reason, the order in which the next four statements
@@ -202,23 +202,24 @@ namespace crisp
 
           if ( ec )
             {
-              if ( ec.value() != boost::asio::error::in_progress &&
-                   ec.value() != boost::asio::error::try_again &&
-                   ec.value() != boost::asio::error::operation_aborted )
+              if ( ec.value() != boost::asio::error::try_again )
                 {
-                  fprintf(stderr, "error writing message: %s\n", strerror(ec.value()));
-                }
-              break;
-            }
+                  /* Only print the associated error string if it's something
+                     interesting -- i.e., something besides "the connection
+                     was closed".  */
+                  if ( ec.value() != boost::asio::error::operation_aborted &&
+                       ec.value() != boost::asio::error::bad_descriptor &&
+                       ec.value() != boost::asio::error::connection_aborted &&
+                       ec.value() != boost::asio::error::connection_reset )
+                    fprintf(stderr, "error writing message: %s\n", strerror(ec.value()));
 
-          if ( ! stopped )
-            {
-              if ( ! ec  )    /* Dispatch the 'sent' handlers. */
-                dispatcher.dispatch(std::move(message), MessageDirection::OUTGOING);
-              else if ( ec.value() == boost::asio::error::try_again )
-                /* Reinsert the message for another go later. */
+                  break;
+                }
+              else
                 m_outgoing_queue.emplace(std::move(message));
             }
+          else
+            dispatcher.dispatch(std::move(message), MessageDirection::OUTGOING);
         }
       fprintf(stderr, "[0x%x][Node] Exiting send loop.\n", THREAD_ID);
 
@@ -251,7 +252,7 @@ namespace crisp
 
       crisp::util::Buffer rdbuf ( BUFSIZ );
 
-      while ( ! stopped )
+      while ( ! m_stopped )
         {
           Message m;
           boost::system::error_code ec;
@@ -263,11 +264,14 @@ namespace crisp
                                   yield[ec]);
           if ( ec )
             {
-              if ( ec.value() != boost::asio::error::operation_aborted )
+              if ( ec.value() != boost::asio::error::operation_aborted &&
+                   ec.value() != boost::asio::error::bad_descriptor )
                 fprintf(stderr, "error reading message header: %s\n", strerror(ec.value()));
               break;
             }
 
+          if ( m_stopped )
+            break;
 
           /* Make sure our buffer is big enough. */
           size_t encoded_size ( m.get_encoded_size() );
@@ -290,13 +294,17 @@ namespace crisp
                                              yield[ec]);
               if ( ec )
                 {
-                  if ( ec.value() != boost::asio::error::operation_aborted )
+                  if ( ec.value() != boost::asio::error::operation_aborted &&
+                       ec.value() != boost::asio::error::bad_descriptor )
                     fprintf(stderr, "error reading message body: %s\n", strerror(ec.value()));
                   break;
                 }
               else
                 assert(n == m.header.length);
             }
+
+          if ( m_stopped )
+            break;
 
           /* Decode the message. */
           DecodeBuffer db ( rdbuf.data, rdbuf.length );
