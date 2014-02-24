@@ -112,9 +112,6 @@ namespace crisp
           std::unique_lock<std::mutex> lock ( m_halt_mutex );
           m_stopped = true;
 
-          if ( ! m_disconnect_emitted.test_and_set() )
-            m_disconnect_signal.emit(*this);
-
           if ( ! can_halt() && ! force_try )
             {               /* Can't halt from this thread. */
               m_stopped = false;
@@ -129,6 +126,9 @@ namespace crisp
           fprintf(stderr, "[0x%x][Node] Halting... ", THREAD_ID);
           fflush_unlocked(stderr); /* make sure we print diagnostics in the
                                       right order. */
+
+          if ( ! m_disconnect_emitted.test_and_set() )
+            m_disconnect_signal.emit(*this);
 
           m_socket.close();
 
