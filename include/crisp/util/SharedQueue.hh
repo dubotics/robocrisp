@@ -45,6 +45,9 @@ namespace crisp
       /** Flag set to indicate that a wait-for-next was aborted. */
       std::atomic<bool> m_aborted;
 
+      /** Number of threads waiting on a value from this queue. */
+      std::atomic<std::size_t> m_num_waiters;
+
     public:
       /** Passthrough constructor for the underlying `std::queue`. */
       template < typename... Args >
@@ -63,6 +66,13 @@ namespace crisp
           m_mutex ( ),
           m_cv ( )
       {}
+
+      /** Get the number of threads waiting on a value from this queue. */
+      std::size_t
+      num_waiters() const
+      {
+        return m_num_waiters;
+      }
 
       /** Wake all threads waiting for an item from this queue.  This is a stopgap solution for
        * properly halting network nodes.
@@ -100,8 +110,7 @@ namespace crisp
       push(const _Tp& value)
       { std::unique_lock<Mutex> lock ( m_mutex );
 	Base::push(value);
-	if ( size() == 1 )
-	  m_cv.notify_one();
+        m_cv.notify_one();
       }
 
       /** Push an item onto the queue.
@@ -112,11 +121,11 @@ namespace crisp
       push(_Tp&& value)
       { std::unique_lock<Mutex> lock ( m_mutex );
 	Base::push(value);
-	if ( size() == 1 )
-	  m_cv.notify_one();
+        m_cv.notify_one();
       }
 
-      /** Remove the first item in the queue. */
+      /** Remove the first item in the queue.  Note that this method <em>does
+          not block</em> if there are no items in the queue. */
       inline void
       pop()
       { std::unique_lock<Mutex> lock ( m_mutex );
@@ -147,8 +156,10 @@ namespace crisp
                 sigfillset(&sigset);
 
                 pthread_sigmask(SIG_BLOCK, &sigset, &oldset);
+                ++m_num_waiters;
                 while ( empty() && ! m_aborted )
                   m_cv.wait(lock);
+                --m_num_waiters;
                 pthread_sigmask(SIG_SETMASK, &oldset, NULL);
               }
 
