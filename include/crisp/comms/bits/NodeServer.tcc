@@ -5,6 +5,8 @@
 #ifndef crisp_comms_bits_NodeServer_tcc
 #define crisp_comms_bits_NodeServer_tcc 1
 
+#include <cstdint>
+
 namespace crisp
 {
   namespace comms
@@ -63,7 +65,9 @@ namespace crisp
         {
           stopped = true;
           acceptor.close();
-          io_service.run_one();
+
+          io_service.post([](){}); /* nop */
+          io_service.poll_one();
 
           /* Shut down all of the client nodes. */
           for ( Node* node : const_cast<NodeSet&>(nodes) )
@@ -85,12 +89,31 @@ namespace crisp
 
 
       fputs("Entering `accept()` loop.\n", stderr);
+
+      /* HACK: max_cumulative_connections == 0 should mean "no limit", but the
+         control logic is broken right now.  So we set
+         max_cumulative_connections to a really big number instead. */
+      if ( max_cumulative_connections == 0 )
+        max_cumulative_connections = SIZE_MAX;
+
       while ( (num_cumulative_connections < max_cumulative_connections ||
                max_cumulative_connections == 0) &&
-              acceptor.is_open() && ! stopped )
+              ! stopped )
         {
-          /* TODO: block until nodes.size() < max_simultaneous_connections
-             if max_simultaneous_connections != 0 */
+          /* Block until we have an open connection slot. */
+          if ( max_simultaneous_connections > 0 &&
+               nodes.size() > max_simultaneous_connections )
+            {
+              fputs("Max connections reached; waiting for a connection slot.\n", stderr);
+              fflush_unlocked(stderr);
+              while ( nodes.size() >= max_simultaneous_connections )
+                {
+                  std::unique_lock<std::mutex> lock ( nodes_mutex );
+                  current_connections_cv.wait(lock);
+                }
+              fputs("Connection slot open; continuing.", stderr);
+              fflush_unlocked(stderr);
+            }
 
           boost::system::error_code ec;
           typename Protocol::endpoint endpoint;
@@ -112,24 +135,50 @@ namespace crisp
               ++num_cumulative_connections;
               std::cerr << "Accepted connection from " << endpoint << std::endl;
 
-              /* We've got a connection.  Create a new protocol-node on the
-               * connection and add it to our set of connected nodes. */
+              /* We've got a connection.  Create a new protocol-node on it. */
               Node* node ( new Node(std::move(socket), NodeRole::SLAVE) );
 
+              /* Set up the node's callbacks and interface configuration. */
               node->configuration = configuration;
               node->dispatcher = dispatcher;
               node->dispatcher.set_target(*node);
 
+              /* Add the node to the list of active connections.  */
               {
                 std::unique_lock<std::mutex> lock ( nodes_mutex );
                 nodes.insert(node);
+                current_connections_cv.notify_all();
               }
+
+              /* Remove the node from the set of active connections on
+                 disconnect. */
+              node->on_disconnect([&](const Node&) {
+                    std::unique_lock<std::mutex> lock ( nodes_mutex );
+                    nodes.erase(node);
+                    delete node;
+                    current_connections_cv.notify_all();
+                });
 
               /* Launch the node's worker threads. */
               service.post(std::bind(&Node::launch, node));
             }
         }
-      fputs("Exiting `accept()` loop.\n", stderr);
+      fprintf(stderr, "Exited `accept()` loop: %s.\n",
+              num_cumulative_connections >= max_simultaneous_connections
+              ? "max. cumulative connections reached"
+              : (stopped
+                 ? "halt requested"
+                 : "reason unknown"));
+      fflush_unlocked(stderr);
+
+      /* Wait for all the connections to close. */
+      while ( nodes.size() > 0 )
+        {
+          std::unique_lock<std::mutex> lock ( nodes_mutex );
+          current_connections_cv.wait(lock);
+        }
+
+      halt();
     }
   }
 }

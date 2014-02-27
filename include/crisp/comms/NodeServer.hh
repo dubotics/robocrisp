@@ -66,12 +66,17 @@ namespace crisp
           unlimited. */
       size_t max_simultaneous_connections;
 
+      /** Condition variable used for cross-thread notification of
+          connection-count change.  */
+      std::condition_variable current_connections_cv;
+
       /** Total (cumulative) number of connections after which the server will
           shut down.  Unlimited if 0.  */
       size_t max_cumulative_connections;
 
       /** Total number of connections seen by this server instance so far. */
       size_t num_cumulative_connections;
+
 
       NodeServer(boost::asio::io_service& _io_service,
                  const typename Protocol::endpoint& listen_endpoint,
