@@ -34,6 +34,7 @@ import os
 from os import path
 from pprint import pprint
 import uuid
+import errno
 import struct
 import ctypes
 import argparse
@@ -77,15 +78,61 @@ else:
 
 from crisp.util.option import *
 
-# import xdg.BaseDirectory
+
+# this function is copied from the PyBluez documentation at
+# <http://code.google.com/p/pybluez/source/browse/trunk/examples/advanced/read-local-bdaddr.py>
+def read_local_bdaddr(hci_sock):
+    old_filter = hci_sock.getsockopt( blu._bluetooth.SOL_HCI, blu._bluetooth.HCI_FILTER, 14)
+    flt = blu._bluetooth.hci_filter_new()
+    opcode = blu._bluetooth.cmd_opcode_pack(blu._bluetooth.OGF_INFO_PARAM,
+            blu._bluetooth.OCF_READ_BD_ADDR)
+    blu._bluetooth.hci_filter_set_ptype(flt, blu._bluetooth.HCI_EVENT_PKT)
+    blu._bluetooth.hci_filter_set_event(flt, blu._bluetooth.EVT_CMD_COMPLETE);
+    blu._bluetooth.hci_filter_set_opcode(flt, opcode)
+    hci_sock.setsockopt( blu._bluetooth.SOL_HCI, blu._bluetooth.HCI_FILTER, flt )
+
+    blu._bluetooth.hci_send_cmd(hci_sock, blu._bluetooth.OGF_INFO_PARAM, blu._bluetooth.OCF_READ_BD_ADDR )
+
+    pkt = hci_sock.recv(255)
+
+    status,raw_bdaddr = struct.unpack("xxxxxxB6s", pkt)
+    assert status == 0
+
+    t = [ "%X" % ord(b) for b in raw_bdaddr ]
+    t.reverse()
+    bdaddr = ":".join(t)
+
+    # restore old filter
+    hci_sock.setsockopt( blu._bluetooth.SOL_HCI, blu._bluetooth.HCI_FILTER, old_filter )
+    return bdaddr
+
+# Make sure there's at least one available bluetooth adapter.
+bdev = None
+try:
+    bdev = blu._bluetooth.hci_open_dev(0)
+    bdaddr = read_local_bdaddr(bdev)
+    bdev.close()
+except (blu.BluetoothError, blu._bluetooth.error) as bte:
+    if (('errno' in dir(bte) and bte.errno == errno.ENOENT) or
+        ('args' in dir(bte) and bte.args[0] == errno.EBADF)):
+        prefix = "ERROR:\n"
+        if sys.stderr.isatty():
+            prefix = "\033[1;31mERROR\033[1m:\033[0m\n"
+        sys.stderr.write(prefix)
+        sys.stderr.write("    Hmm... I don't see any bluetooth adapters.  Are you sure\n"
+                         "    you have one plugged in and enabled?\n")
+        exit(1)
+    else:
+        os.abort()
+
 
 
 daemon_mode = False
 bdaddr = None
 
-def set_daemon_mode():
+def set_daemon_mode(value):
     global daemon_mode
-    daemon_mode = True
+    daemon_mode = value
 
 def show_help(_exit, _exit_status=None):
     OptionParser.show_help(options, PROGRAM_USAGE, PROGRAM_DESCRIPTION)
@@ -111,23 +158,6 @@ while '--' in args:
 # Fetch UUIDs
 crisp_bootstrap_uuid = open(path.join(CRISP_SHARE_DIR, 'crisp-bootstrap.uuid')).read()
 
-# Make sure we have an accessible Bluetooth device
-# sock = None
-# try:
-#     sock = blu._bluetooth.hci_open_dev(-1)
-# except:
-#     sys.stderr.write("Oops!  I couldn't find a Bluetooth adapater.\n")
-#     sys.stderr.write("Trying to bring up the first available adapter now...")
-#     subprocess.check_call(['hciconfig', 'hci0', 'up'])
-#     try:
-#         sock = blu._bluetooth.hci_open_dev(-1)
-#     except:
-#         sys.stderr.write("Are you sure your Bluetooth adapter is plugged in and enabled?\n")
-#         exit(1)
-# finally:
-#     if sock != None:
-#         sock.close()
-
 if daemon_mode:
     # Set up the server socket.
     server_sock = blu.BluetoothSocket(blu.RFCOMM)
@@ -136,7 +166,7 @@ if daemon_mode:
 
     # Disable simple-pairing mode (apparently all Linux kernels >= 3.0 have some
     # kind of bug in it...)
-    # The following code will crash (
+    # The following code will crash :(
     #
     #     blu._bluetooth.OCF_WRITE_SIMPLE_PAIRING_MODE = 0x0056 # missing in PyBluez
     #
@@ -152,22 +182,39 @@ if daemon_mode:
     #                                 timeout=2000,
     #                                 params=cp)
     # So we use this ugly alternative instead.
-    subprocess.check_call(['hciconfig', 'hci0', 'sspmode', '0']) # disable simple pairing
+    try:
+        subprocess.check_call(['hciconfig', 'hci0', 'sspmode', '0']) # disable simple pairing
 
-    # Also some other useful settings
-    subprocess.check_call(['hciconfig', 'hci0', 'noauth']) # disable authentification
-    subprocess.check_call(['hciconfig', 'hci0', 'piscan']) # makes device discoverable or something
-
+        # Also some other useful settings
+        subprocess.check_call(['hciconfig', 'hci0', 'noauth']) # disable authentification
+        subprocess.check_call(['hciconfig', 'hci0', 'piscan']) # makes device discoverable or something
+    except:
+        prefix = "WARNING:\n"
+        if sys.stderr.isatty():
+            prefix = "\033[1;33mWARNING\033[1m:\033[0m\n"
+        sys.stderr.write(prefix)
+        sys.stderr.write("    It looks like we don't have permission to change bluetooth adapter\n"
+                         "    settings.  We probably won't be able to communicate properly, but\n"
+                         "    I'll keep going just in case it works anyway.\n")
 
     port = server_sock.getsockname()[1]
 
     # Register the bootstrap service with the local bluetooth Service Discovery
     # Protocol (SDP) server.
-    blu.advertise_service(server_sock, SERVICE_NAME, crisp_bootstrap_uuid,
-                          service_classes = [ crisp_bootstrap_uuid,
-                                              blu.SERIAL_PORT_CLASS ],
-                          profiles = [ blu.SERIAL_PORT_PROFILE ],
-                          description=SERVICE_DESCRIPTION)
+    try:
+        blu.advertise_service(server_sock, SERVICE_NAME, crisp_bootstrap_uuid,
+                              service_classes = [ crisp_bootstrap_uuid,
+                                                  blu.SERIAL_PORT_CLASS ],
+                              profiles = [ blu.SERIAL_PORT_PROFILE ],
+                              description=SERVICE_DESCRIPTION)
+    except:
+        prefix = "ERROR:\n"
+        if sys.stderr.isatty():
+            prefix = "\033[1;31mERROR\033[1m:\033[0m\n"
+        sys.stderr.write(prefix)
+        sys.stderr.write("    Couldn't register the bootstrap service with the local service\n"
+                         "    manager.  Giving up.\n")
+
 
     while True:
         sys.stderr.write("Waiting for connection on RFCOMM channel %d\n" % port)

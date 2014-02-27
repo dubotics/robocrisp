@@ -9,6 +9,7 @@ TransportsDir = File.join(LibDir, "bootstrap")
 
 $: << File.join(LibDir, 'ruby')
 
+require 'continuation'
 require 'crisp/bootstrap'
 require 'crisp/util/Option'
 require 'proxy'
@@ -22,28 +23,27 @@ Prologue = "Bootstrapper tool for launching RoboCRISP processes."
 
 
 
-mode = :client
+$mode = :client
 transport = 'stdio'
-remote_only = false
-list_programs = false
-config_files = []
+$remote_only = false
+$config_files = []
 noact = false
 
 Options = {
   'General options' =>
   [ Option.new('h', 'help', 'Show this help.') \
-         { OptionParser.show_help(Options, Usage, Prologue); exit(0) },
+    { OptionParser.show_help(Options, Usage, Prologue); exit(0) },
     Option.new('c', 'config', 'Load configuration file FILE (multiple okay).' +
                "  MODE is either `base' (default) or `program'", '[MODE:]FILE') \
-      { |arg| config_files << arg },
+    { |arg| $config_files << arg },
     Option.new('t', 'transport', 'Use TRANSPORT for bootstrap communication.', 'TRANSPORT') \
-      { |arg| transport = arg },
-    Option.new('d', 'daemon', 'Run in server mode.') { mode = :server } ],
+    { |arg| transport = arg },
+    Option.new('d', 'daemon', 'Run in server mode.') { $mode = :server } ],
   'Utility options' =>
-  [ Option.new(nil, 'list-programs', 'List available programs and exit.') { list_programs = true },
-    Option.new('r', 'remote', 'Run the command on the remote device only.') { remote_only = true },
+  [ Option.new(nil, 'list-programs', 'List available programs and exit.') { $mode = :list_programs },
+    Option.new('r', 'remote', 'Run the command on the remote device only.') { $remote_only = true },
     Option.new('n', 'dry-run', 'Print the program-invocations to be run, but don\'t actually run them.') \
-      { noact = true } ],
+    { noact = true } ],
 }
 
 OptionParser.handle_options(Options, ARGV)
@@ -53,7 +53,7 @@ transport, transport_args = transport.split(':', 2)
 transport_args = transport_args.split(',') if not transport_args.nil?
 transport = transport.intern
 
-if not list_programs
+def exec_transport(transport, transport_args)
   # Execute the appropriate transport handler, if necessary.  A value of `:stdio`
   # for `transport` indicates that this process was launched by one of the
   # transport handler scripts (rather than by the user).
@@ -62,21 +62,22 @@ if not list_programs
     raise "#{transport.intern}: no such transport availabe" if not File.exist?(transport_file)
 
     transport_cmd = [ transport_file ]
-    transport_cmd << '--daemon' if mode == :server # daemon mode for the transport
+    transport_cmd << '--daemon' if $mode == :server # daemon mode for the transport
     transport_cmd.concat(transport_args) if not transport_args.nil? and not transport_args.empty?
     transport_cmd << '--'
-    transport_cmd << '--remote' if remote_only
-    config_files.each { |cf| transport_cmd << "--config=#{cf}" }
+    transport_cmd << '--remote' if $remote_only
+    $config_files.each { |cf| transport_cmd << "--config=#{cf}" }
     transport_cmd.concat(ARGV)
-
+    $stderr.puts("Launching %s communication handler: %s %s" % [ transport,
+                                                                 File.basename(transport_file),
+                                                                 transport_cmd[1..-1].join(" ")])
     Process.exec(*transport_cmd)
   end
 end
 
-
 # Load all configuration files specified on the command line.
 config = CRISP::Bootstrap::Configuration.new
-config_files.each { |c|
+$config_files.each { |c|
   cfgmode = :base
   fname = c
 
@@ -89,47 +90,40 @@ config_files.each { |c|
 }
 
 
-if config.programs.nil?
-  raise 'No programs loaded; cannot continue.'
-else
-  if list_programs
-    $stderr.puts("Loaded program definitions:")
-    config.programs.each_value do |p|
-      $stderr.puts("    \033[1;97m#{p.name}\033[0m")
-      $stderr.puts("        uuid: %s" % p.uuid)
-      $stderr.puts("      binary: %s" % p.binary)
-      $stderr.puts("       modes:")
-      p.modes.each_value do |pm|
-        $stderr.puts("            %s%s" %
-                     [pm.name.inspect,
-                      if not pm.parameter_match.nil?
-                        ' (matches %s)' % pm.parameter_match.name.inspect
-                      else
-                        ''
-                      end])
-        prefix = "            "
-        $stderr.puts(prefix + 'Parameters:')
-        prefix += '    '
-        pm.parameters.each { |prm|
-          $stderr.puts(prefix + '%s (%s%s%s)' %
-                       [ prm.name, prm.type, prm.subtype.nil? ? '' : ':' + prm.subtype,
-                         prm.default.nil? ? '' : ", default %s" % prm.default.to_s ])
-        }
-      end
+raise 'No programs loaded; cannot continue.  Did you specify a configuration file to load?' if config.programs.nil?
+
+def list_programs(config)
+  $stderr.puts("Loaded program definitions:")
+  config.programs.each_value do |p|
+    $stderr.puts("    \033[1;97m#{p.name}\033[0m")
+    $stderr.puts("        uuid: %s" % p.uuid)
+    $stderr.puts("      binary: %s" % p.binary)
+    $stderr.puts("       modes:")
+    p.modes.each_value do |pm|
+      $stderr.puts("            %s%s" %
+                   [pm.name.inspect,
+                    if not pm.parameter_match.nil?
+                      ' (matches %s)' % pm.parameter_match.name.inspect
+                    else
+                      ''
+                    end])
+      prefix = "            "
+      $stderr.puts(prefix + 'Parameters:')
+      prefix += '    '
+      pm.parameters.each { |prm|
+        $stderr.puts(prefix + '%s (%s%s%s)' %
+                     [ prm.name, prm.type, prm.subtype.nil? ? '' : ':' + prm.subtype,
+                       prm.default.nil? ? '' : ", default %s" % prm.default.to_s ])
+      }
     end
-    exit(0)
   end
 end
-proxy_args = []
-case transport
-when :stdio
-  proxy_args << [$stdin, $stdout]
-else
-  raise '%s: unhandled transport name' % transport.to_s
-end
 
 
-case mode
+case $mode
+when :list_programs
+  list_programs(config)
+
 when :client
   if ARGV.size < 1
     OptionParser.show_usage(Usage, $stderr)
@@ -139,78 +133,137 @@ when :client
   program_name, *arguments = ARGV
   mode_name = nil
   if program_name.include?(':')
-    ary = program_name.split(':', 2)
-    program_name = ary[0]
-    mode_name = ary[1]
+    program_name, mode_name = program_name.split(':', 2)
   end
 
-  # Connect to the peer and fetch its bootstrap configuration.
-  cli = Proxy::Client.new(*proxy_args)
-  $stderr.print('Fetching remote configuration... ')
-  remote_config = cli['config']
-  $stderr.puts('okay.')
-
-  # Fetch the local and remote program references and ensure that they refer to
-  # the same program.
+  # Select local program/mode/etc. before we communicate so the user doesn't
+  # have to wait to find out that he/she chose a program or mode that doesn't exist.
   raise '%s: no such program defined' % program_name if
     not config.programs.has_key?(program_name)
-  raise '%s: no such program defined on remote device' % program_name if
-    not remote_config.programs.has_key?(program_name)
-
-  program, remote_program = [config,remote_config].
-    collect { |c| c.programs[program_name] }
-
-  raise 'Program definition mismatch' if program.uuid != remote_program.uuid
+  program = config.programs[program_name]
 
   # Use the user-supplied script arguments to select the local mode, and use
   # the matched-mode name for that mode to select the remote mode.
-  raise 'Program "%s" has no default mode and no mode was supplied' % program_name if
-    mode_name.nil? and program.default_mode.nil?
-
   if mode_name.nil?
-    mode = program.default_mode
-    remote_mode =
-      remote_program.modes[mode.name].parameter_match ||
-      remote_program.default_mode
+    raise 'Program "%s" has no default mode and no mode was supplied' % program_name if
+      program.default_mode.nil?
+    mode_name = program.default_mode.name
   else
-    mode = program.modes[mode_name]
-    remote_mode = remote_program.modes[mode.parameter_match.name]
+    raise 'Program "%s" has no such mode "%s"' % [program_name, mode_name] if
+      not program.modes.has_key?(mode_name)
   end
+  local_mode = mode_name.nil? ? program.default_mode : program.modes[mode_name]
 
-  begin
-    remote_invoke_info = remote_mode.prepare(*arguments)
-    invoke_info = nil
-    invoke_info = mode.prepare(remote_invoke_info, *arguments) if not remote_only
+  if transport != :stdio
+    # We select a local "remote" mode that matches the mode that actually
+    # _will_ be run locally so we can test local argument selection before
+    # initiating communication.
+    #
+    # Since it's quite possible that this mode (the "remote" one) will fail to
+    # work on the local machine, we handle any exceptions raised when preparing
+    # it by ignoring the exceptions and skipping local argument-selection tests.
+    callcc do |cont|
+      local_remote_mode = mode_name.nil? ? (mode.parameter_match || local_mode) : local_mode.parameter_match
 
-    $stderr.puts("remote: %s" % remote_invoke_info.to_ary.collect \
-                 { |s| s =~ /[ "'\\]/ ? s.inspect : s }.join(' '))
-    remote_invoke_info.exec! if not noact
-    cli.close()
+      local_remote_invoke_info = nil
+      begin
+        local_remote_invoke_info = local_remote_mode.prepare(*arguments)
+      rescue
+        cont.call()
+      end
 
-    ary = invoke_info.to_ary
-    $stderr.puts(" local: %s" % invoke_info.to_ary.collect \
-                 { |s| s =~ /[ "'\\]+/ ? s.inspect : s }.join(' '))
-    if not noact and not remote_only
-      sleep(0.25)                 # Give the remote program (likely a server) time to initialize.
-      invoke_info.exec!
+      begin
+        local_invoke_info = local_mode.prepare(local_remote_invoke_info, *arguments)
+      rescue => e
+        $stderr.puts(e.message)
+        exit(1)
+      end
     end
-  rescue => err
-    $stderr.puts('%u: %s' % [Process.pid, err.inspect])
-    $stderr.puts('    ' + err.backtrace.join("\n    "))
-    raise err
-  rescue Interrupt
-  ensure
-    cli.close() if cli.connection_open?
+
+    # Now *actually* run the communication handler.
+    exec_transport(transport, transport_args)
+  else
+    proxy_stream = [$stdin, $stdout]
+
+    # Connect to the peer and fetch its bootstrap configuration.
+    cli = Proxy::Client.new(proxy_stream)
+    $stderr.print('Fetching remote configuration... ')
+    remote_config = cli['config']
+    $stderr.puts('okay.')
+    $stderr.flush()
+
+    # Fetch the remote program reference and ensure that it refers to the same
+    # program as the local one.
+    raise '%s: no such program defined on remote device' % program_name if
+      not remote_config.programs.has_key?(program_name)
+    remote_program = remote_config.programs[program_name]
+
+    raise 'Program definition mismatch' if program.uuid != remote_program.uuid
+
+    remote_mode = mode_name.nil? \
+    ? remote_program.modes[local_mode.name].parameter_match || remote_program.default_mode \
+    : remote_program.modes[local_mode.parameter_match.name]
+
+    begin
+      remote_invoke_info = remote_mode.prepare(*arguments)
+      invoke_info = nil
+      invoke_info = local_mode.prepare(remote_invoke_info, *arguments) if not $remote_only
+
+      $stderr.print("remote: ")
+      $stderr.flush()
+      $stderr.puts(remote_invoke_info.to_ary.collect \
+                   { |s| s =~ /[ "'\\]/ ? s.inspect : s }.join(' '))
+      $stderr.flush()
+
+
+      # Here we start two threads: one to tell the remote bootstrapper instance
+      # to start the program, and another to kill the first if it takes too
+      # long.  Yes, it's violent, but it's better than becoming a zombie.
+      remote_exec_thread = Thread.new do
+        remote_invoke_info.exec! if not noact
+        cli.close()
+        # We didn't time out, so we need to kill the timeout thread to prevent
+        # it from telling the user that we did.
+        $timeout_thread.kill() if not $timeout_thread.nil? and $timeout_thread.alive?
+      end
+      $timeout_thread = Thread.new do
+        sleep(5);
+        remote_exec_thread.kill()
+        $stderr.puts("Timeout reached waiting for remote program start; skipping to local execution.")
+        $stderr.flush()
+      end
+
+      # Wait for one of the two threads to kill the other.
+      [remote_exec_thread, $timeout_thread].each { |thr| thr.join() }
+
+      # Now we can run the local program.
+      ary = invoke_info.to_ary
+      $stderr.puts(" local: %s" % invoke_info.to_ary.collect \
+                   { |s| s =~ /[ "'\\]+/ ? s.inspect : s }.join(' '))
+      if not noact and not $remote_only
+        sleep(0.25)                 # Give the remote program (likely a server) time to initialize.
+        invoke_info.exec!
+      end
+    rescue => err
+      $stderr.puts('%u: %s' % [Process.pid, err.inspect])
+      $stderr.puts('    ' + err.backtrace.join("\n    "))
+      raise err
+    rescue Interrupt
+    ensure
+      cli.close() if cli.connection_open?
+    end
   end
-
-
-
 when :server
-  require 'proxy'
-  pserv = Proxy::Server.new(*proxy_args)
-  pserv.add('config', config)
-  pserv.run()
+  if transport == :stdio
+    proxy_stream = [$stdin, $stdout]
+    require 'proxy'
 
+    pserv = Proxy::Server.new(proxy_stream)
+    pserv.add('config', config)
+    pserv.run()
+  else
+    exec_transport(transport, transport_args)
+  end
 else
-  $stderr.puts(mode.inspect)
+  raise mode.inspect
 end

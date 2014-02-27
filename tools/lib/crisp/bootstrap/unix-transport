@@ -50,7 +50,7 @@ if daemon_mode
         child_args.concat(subprocess_args) if not subprocess_args.empty?
 
         child_pid = Process.spawn(*child_args, :in => client_sock, :out => client_sock)
-        $stderr.puts(Process.wait(child_pid))
+        Process.wait(child_pid)
       end
     end
   ensure
