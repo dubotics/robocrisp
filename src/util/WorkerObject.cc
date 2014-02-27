@@ -1,4 +1,25 @@
 #include <crisp/util/WorkerObject.hh>
+#include <sys/time.h>
+#include <time.h>
+
+#define ONE_BILLION 1000000000
+
+static void
+sleep_ns(long int ns)
+{
+  long int seconds = 0;
+  if ( ns > ONE_BILLION )
+    {
+      seconds = ns / ONE_BILLION;
+      ns = ns % ONE_BILLION;
+    }
+
+  struct timespec sleep_time = { seconds, ns };
+  struct timespec remain_time = { 0 };
+
+  while ( nanosleep(&sleep_time, &remain_time) < 0 )
+    sleep_time = remain_time;
+}
 
 namespace crisp
 {
@@ -31,14 +52,15 @@ namespace crisp
       return ! running;
     }
 
-    bool WorkerObject::WorkerThread::halt()
+    bool WorkerObject::WorkerThread::halt(bool wait)
     {
       if ( thread.get_id() == std::this_thread::get_id() )
         return false;
       else if ( thread.joinable() )
         {
           should_halt = true;
-          thread.join();
+          if ( wait )
+            thread.join();
         }
 
       return true;
@@ -71,6 +93,17 @@ namespace crisp
       return can_launch;
     }
       
+    std::size_t
+    WorkerObject::num_live_threads() const
+    {
+      size_t out ( 0 );
+      for ( const WorkerThread& worker : m_worker_threads )
+        if ( worker.thread.joinable() )
+          ++out;
+      return out;
+    }
+
+
     bool
     WorkerObject::running(bool all) const
     {
@@ -105,9 +138,45 @@ namespace crisp
       bool canhalt ( can_halt() );
 
       if ( canhalt )
-        for ( WorkerThread& worker : m_worker_threads )
-          worker.halt();
-      m_worker_threads.clear();
+        {
+          /* WARNING: disgusting hack follows :) */
+
+          /* start a thread that:
+
+               (1) calls `halt(false)` on each worker thread to tell them to
+                   exit, and
+
+               (2) calls `halt(true)` on each worker thread to wait for them to
+                   exit
+          */
+          std::thread halt_thread([&]() {
+              for ( WorkerThread& worker : m_worker_threads )
+                worker.halt(false);
+              for ( WorkerThread& worker : m_worker_threads )
+                worker.halt(true);
+
+              m_worker_threads.clear();
+            });
+
+          /* Make work for those threads so they can do something and then
+             notice they've been asked to halt.
+
+             I don't like the way this is implemented, since it might flood the
+             io_service's work queue with excess calls to `sleep_ns`.  It does,
+             however, seem to work.
+          */
+          std::thread make_work_thread([&]() {
+              while ( running() )
+                {
+                  m_io_service.post(std::bind(&sleep_ns, 1000));
+                }
+            });
+
+          if ( halt_thread.joinable() )
+            halt_thread.join();
+          if ( make_work_thread.joinable() )
+            make_work_thread.join();
+        }
 
       return canhalt;
     }

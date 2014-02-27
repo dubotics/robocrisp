@@ -38,12 +38,14 @@ namespace crisp
          */
         bool launch(boost::asio::io_service& service);
 
-        /** Halt the worker thread.  This method will block until the thread has exited.
+        /** Halt the worker thread.
+         *
+         * @param wait If @c true, block until the worker thread exits.
          *
          * @return `true` if the thread could be halted (or was already halted), and `false` if
          *   the method was called from within the worker thread itself.
          */
-        bool halt();
+        bool halt(bool wait = true);
 
         std::thread thread;         /**< Thread handle. */
         std::atomic<bool> should_halt; /**< Used to indicate to the thread that it should exit. */
@@ -74,6 +76,10 @@ namespace crisp
        */
       bool
       launch();
+
+      /** Get the number of worker threads that are still active. */
+      std::size_t
+      num_live_threads() const;
 
 
       /** Check if worker threads are running.
