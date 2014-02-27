@@ -21,7 +21,7 @@ namespace crisp
   {
     template < typename _Protocol >
     BasicNode<_Protocol>::BasicNode(typename _Protocol::socket&& _socket, NodeRole _role)
-      : WorkerObject ( _socket.get_io_service(), 5 ),
+      : WorkerObject ( _socket.get_io_service(), 6 ),
         m_socket ( std::move(_socket) ),
         m_sync_action ( ),
         m_halt_action ( ),
@@ -117,8 +117,8 @@ namespace crisp
               m_stopped = false;
               m_halting.clear();
 
-              m_halt_cv.notify_all();
               m_io_service.poll();
+              m_halt_cv.notify_all();
 
               return false;
             }
@@ -127,27 +127,54 @@ namespace crisp
           fflush_unlocked(stderr); /* make sure we print diagnostics in the
                                       right order. */
 
-          if ( ! m_disconnect_emitted.test_and_set() )
-            m_disconnect_signal.emit(*this);
+          if ( m_outgoing_queue.num_waiters() > 0 )
+            {
+              //fprintf(stderr, "waking all threads waiting on outgoing messages... ");
+              m_outgoing_queue.wake_all();
+              //fprintf(stderr, "done.\n");
+            }
 
-          m_socket.close();
+          if ( m_socket.is_open() )
+            {
+              //fprintf(stderr, "closing socket... ");
+              m_socket.close();
+              //fprintf(stderr, "closed.\n");
+            }
+
+          if ( ! m_disconnect_emitted.test_and_set() )
+            {
+              //fprintf(stderr, "sending `disconnected` signal... ");
+              m_disconnect_signal.emit(*this);
+              //fprintf(stderr, "sent.\n");
+            }
+
 
           if ( ! m_sync_action.expired() )
-            m_sync_action.lock()->cancel();
+            {
+              //fprintf(stderr, "cancelling sync action... ");
+              m_sync_action.lock()->cancel();
+              //fprintf(stderr, "cancelled.\n");
+            }
 
           if ( ! m_halt_action.expired() )
-            m_halt_action.lock()->cancel();
+            {
+              //fprintf(stderr, "cancelling halt-timout action... ");
+              auto ptr ( m_halt_action.lock() );
+              if ( ptr )
+                ptr->cancel();
+              //fprintf(stderr, "cancelled.\n");
+            }
+
 
           m_sync_action.reset();
           m_halt_action.reset();
 
-          m_outgoing_queue.wake_all();
-          m_io_service.poll();
-
+          //fprintf(stderr, "Halting all worker threads... ");
           WorkerObject::halt();
+          //fprintf(stderr, "worker threads halted.\n");
 
           fflush_unlocked(stderr);
-          fprintf(stderr, "done.\n");
+          fprintf(stderr, " halted.\n");
 
           m_halt_cv.notify_all();
           return true;
@@ -286,7 +313,7 @@ namespace crisp
           const detail::MessageTypeInfo& mti ( detail::get_type_info(m.header.type) );
           if ( mti.has_body )
             {
-              size_t 
+              size_t
                 n  = boost::asio::async_read(m_socket,
                                              boost::asio::buffer(rdbuf.data + sizeof(m.header),
                                                                  m.header.length),
