@@ -29,19 +29,22 @@ list_programs = false
 config_files = []
 noact = false
 
-Options = [ Option.new('h', 'help', 'Show this help.') \
-            { OptionParser.show_help(Options, Usage, Prologue); exit(0) },
-            Option.new(nil, 'list-programs', 'List available programs and exit.') { list_programs = true },
-            Option.new('d', 'daemon', 'Run in server mode.') { mode = :server },
-            Option.new('r', 'remote', 'Run the command on the remote device only.') { remote_only = true },
-            Option.new('c', 'config', 'Load configuration file FILE (multiple okay).' +
-                       " MODE is either `base' (default)\n or `program'", '[MODE:]FILE') \
-            { |arg| config_files << arg },
-            Option.new('n', 'nop', 'Print the program to be run, but Don\'t actually run it.') \
-            { noact = true },
-            Option.new('t', 'transport', 'Use TRANSPORT for bootstrap communication.',
-                       'TRANSPORT') { |arg| transport = arg }
-          ]
+Options = {
+  'General options' =>
+  [ Option.new('h', 'help', 'Show this help.') \
+         { OptionParser.show_help(Options, Usage, Prologue); exit(0) },
+    Option.new('c', 'config', 'Load configuration file FILE (multiple okay).' +
+               "  MODE is either `base' (default) or `program'", '[MODE:]FILE') \
+      { |arg| config_files << arg },
+    Option.new('t', 'transport', 'Use TRANSPORT for bootstrap communication.', 'TRANSPORT') \
+      { |arg| transport = arg },
+    Option.new('d', 'daemon', 'Run in server mode.') { mode = :server } ],
+  'Utility options' =>
+  [ Option.new(nil, 'list-programs', 'List available programs and exit.') { list_programs = true },
+    Option.new('r', 'remote', 'Run the command on the remote device only.') { remote_only = true },
+    Option.new('n', 'dry-run', 'Print the program-invocations to be run, but don\'t actually run them.') \
+      { noact = true } ],
+}
 
 OptionParser.handle_options(Options, ARGV)
 

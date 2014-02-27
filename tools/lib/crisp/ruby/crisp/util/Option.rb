@@ -86,25 +86,42 @@ module CRISP
         @argument_optional
       end
 
-      def to_string(maxLongNameLength, maxOptArgNameLength)
+      def to_string(max_len)
         out = '  '
         
         out += '-' + @short_name if not @short_name.nil?
         out += ', ' if not short_name.nil? and not @long_name.nil?
+        out += '--' + @long_name if not @long_name.nil?
 
-        s = ''
         if not @argument_description.nil?
-          s += ' ' if not @argument_optional
-          s += '[=' if @argument_optional
-          s += @argument_description
-          s += ']' if @argument_optional
-          s += ' '
+          if not @argument_optional
+            out += ' ' + @argument_description
+          else
+            out += '[=' + @argument_description + ']'
+          end
         end
 
-        out += sprintf('%s%-' + (maxLongNameLength + maxOptArgNameLength + 2).to_s() + 's',
-                       (if @long_name.nil? then '  ' else '--' end),
-                       (if long_name.nil? then '' else @long_name end) + s ) + @description
+        sprintf('%%-%ds%%s' % (max_len + 2) %
+                [out, Option.wrap_text(@description, max_len + 2)])
       end
+
+      def self.wrap_text(s, start_col=0, max_col=75)
+        width = max_col - start_col
+        if s.length <= width
+          return s
+        else
+          out = ''
+          while s.length > width
+            front = s[0...width]
+            parts = front.rpartition(/\s+/)
+            s = parts[2].strip + s[width..-1]
+            out += "%s\n%s" % [parts[0], ' ' * start_col]
+          end
+          out += s.strip
+          out
+        end
+      end
+
 
       def <=>(otherOption)
         if not @long_name.nil? and not otherOption.long_name.nil?
@@ -127,6 +144,7 @@ module CRISP
     module OptionParser
       # Handle script arguments according to the given options array.
       def OptionParser.handle_options(option_list, arguments = ARGV)
+        option_list = option_list.values.flatten() if option_list.kind_of?(Hash)
         short_option_map = { }
         long_option_map = { }
         option_list.each { |o|
@@ -158,27 +176,36 @@ module CRISP
       # Print a formatted help message (as is often triggered via a program's
       # `--help` command-line option) to an arbitrary stream.
       def OptionParser.show_help(option_list, usage, description, io = $stdout)
-        maxLongNameLength = 0
-        maxOptArgNameLength = 0
-        option_list.each { |o|
-          long_name_length = 0
-          optArgNameLength = 0
+        all_options = option_list
+        all_options = option_list.values.flatten() if option_list.kind_of?(Hash)
 
-          long_name_length = o.long_name.length if not o.long_name.nil?
+        max_len = 0
+        all_options.each { |o|
+          optarg_length = 2     # two spaces for the margin
+
+          optarg_length += 2 if not o.short_name.nil? and not o.long_name.nil?
+          optarg_length += 2 + o.long_name.length if not o.long_name.nil?
+          optarg_length += 1 + o.short_name.length if not o.short_name.nil?
+
           if not o.argument_description.nil?
-            optArgNameLength = o.argument_description.length
-            optArgNameLength += 2 if o.argument_optional?
+            optarg_length += 1 + o.argument_description.length
+            optarg_length += 3 if o.argument_optional?
           end
-
-          maxLongNameLength = long_name_length if long_name_length > maxLongNameLength
-          maxOptArgNameLength = optArgNameLength if optArgNameLength > maxOptArgNameLength
+          max_len = optarg_length if optarg_length > max_len
         }
 
         self.show_usage(usage, io)
-        io.print( (if description.nil? then '' else "\n%s\n" % description end) + "\n")
-        io.print("Options:\n")
+        io.print( (if description.nil? then '' else "\n%s\n" % description end))
+        if option_list.kind_of?(Array)
+          io.print("\nOptions:\n")
 
-        option_list.each { |o| io.print o.to_string(maxLongNameLength, maxOptArgNameLength) + "\n" }
+          option_list.each { |o| io.print o.to_string(max_len) + "\n" }
+        else
+          option_list.each_pair { |k, v|
+            io.print("\n#{k}:\n")
+            v.each { |o| io.print o.to_string(max_len) + "\n" }
+          }
+        end
       end
 
       def OptionParser.handle_long_option(long_option_map, arg, next_arg)
