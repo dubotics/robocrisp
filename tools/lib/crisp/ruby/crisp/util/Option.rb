@@ -157,7 +157,7 @@ module CRISP
           if n === false
             break
           elsif n == 0
-            break
+            i += 1
           else
             (i...(i+n)).each { |j| arguments.delete_at(i) }
           end
@@ -249,25 +249,29 @@ module CRISP
         while ( i < arg.length )
           raise 'No such option, `-%s\'!' % arg[i].chr if not short_option_map.has_key?(arg[i].chr)
           option = short_option_map[arg[i].chr]
-
+          n = 0
           if option.takes_argument?
             if option.argument_optional?
               $stderr.print('Warning: Please use `--long-option=VALUE\' syntax when specifying optional arguments.'+"\n") if not next_arg.nil?
               option.received()
+              n = 1
             else
               if i < arg.length - 1
                 option.received(arg[(i+1)..-1])
                 i = arg.length
+                n = 1
               else
                 raise 'Missing required argument to `-' + arg[i].chr + '\'!' if next_arg.nil?
                 option.received(next_arg)
-                consumed += 1
-                break
+                i = arg.length
+                n = 2
               end
             end
           else
             option.received()
+            n = 1
           end
+          consumed = [n, consumed].max
           i += 1
         end
         consumed
