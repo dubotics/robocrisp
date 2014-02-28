@@ -202,7 +202,9 @@ when :client
 
     remote_mode = mode_name.nil? \
     ? remote_program.modes[local_mode.name].parameter_match || remote_program.default_mode \
-    : remote_program.modes[local_mode.parameter_match.name]
+    : (local_mode.parameter_match.nil? \
+       ? remote_program.modes[local_mode.name] \
+       : remote_program.modes[local_mode.parameter_match.name])
 
     begin
       remote_invoke_info = remote_mode.prepare(*arguments)
