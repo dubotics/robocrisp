@@ -176,11 +176,12 @@ namespace crisp
             }
         }
       fprintf(stderr, "Exited `accept()` loop: %s.\n",
-              num_cumulative_connections >= max_simultaneous_connections
+              ( max_cumulative_connections > 0 &&
+                num_cumulative_connections >= max_cumulative_connections )
               ? "max. cumulative connections reached"
-              : (stopped
-                 ? "halt requested"
-                 : "reason unknown"));
+              : ( stopped
+                  ? "server shutting down"
+                  : "reason unknown" ));
       fflush_unlocked(stderr);
 
       /* Wait for all the connections to close. */
