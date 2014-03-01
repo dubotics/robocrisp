@@ -191,6 +191,7 @@ namespace crisp
           current_connections_cv.wait(lock);
         }
 
+      /* Halt if we haven't already.  If we have, this call has no effect. */
       halt();
     }
   }
