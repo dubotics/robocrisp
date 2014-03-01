@@ -34,6 +34,7 @@ namespace crisp
       typedef typename Node::Socket::protocol_type Protocol;
       typedef std::unordered_set<Node*> NodeSet;
       typedef typename Protocol::acceptor Acceptor;
+      typedef crisp::util::Signal<void(NodeServer&,Node&)> ConnectSignal;
 
       /** Reference to the I/O service used by Boost.Asio classes and methods.  */
       boost::asio::io_service& io_service;
@@ -51,6 +52,9 @@ namespace crisp
 
       /** MessageDispatcher to be copied to created (nodes). */
       MessageDispatcher<_Node> dispatcher;
+
+      /** Signal emitted for each new connection. */
+      ConnectSignal connect_signal;
 
       /** Handle to the thread in which `run` is running when called indirectly via `launch`. */
       std::thread run_thread;
@@ -90,6 +94,14 @@ namespace crisp
       void run();
 
       void halt();
+
+      /** Register a function to be called whenever a new client connects.
+       *
+       * @param func The function to be called for each new client.
+       */
+      typename ConnectSignal::Connection
+      on_connect(typename ConnectSignal::Function func);
+
 
       /** Main server routine.
        */

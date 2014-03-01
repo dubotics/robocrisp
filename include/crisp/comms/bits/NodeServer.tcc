@@ -22,6 +22,7 @@ namespace crisp
         nodes_mutex ( ),
         configuration ( ),
         dispatcher ( ),
+        connect_signal ( io_service ),
         run_thread ( ),
         halting ( ),
         stopped ( false ),
@@ -77,6 +78,15 @@ namespace crisp
             }
         }
     }
+
+
+    template < typename _Node >
+    typename NodeServer<_Node>::ConnectSignal::Connection
+    NodeServer<_Node>::on_connect(typename NodeServer<_Node>::ConnectSignal::Function func)
+    {
+      return connect_signal.connect(func);
+    }
+
 
     template < typename _Node >
     void
@@ -161,6 +171,8 @@ namespace crisp
 
               /* Launch the node's worker threads. */
               service.post(std::bind(&Node::launch, node));
+
+              connect_signal.emit(*this, *node);
             }
         }
       fprintf(stderr, "Exited `accept()` loop: %s.\n",
