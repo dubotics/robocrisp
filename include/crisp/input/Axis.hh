@@ -1,5 +1,5 @@
-#ifndef input_Axis_hh
-#define input_Axis_hh 1
+#ifndef crisp_input_Axis_hh
+#define crisp_input_Axis_hh 1
 
 #include <cstdlib>
 #include <initializer_list>
@@ -182,4 +182,4 @@ namespace crisp
   }
 }
 
-#endif	/* input_Axis_hh */
+#endif	/* crisp_input_Axis_hh */

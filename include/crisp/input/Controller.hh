@@ -1,5 +1,5 @@
-#ifndef input_Controller_hh
-#define input_Controller_hh 1
+#ifndef crisp_input_Controller_hh
+#define crisp_input_Controller_hh 1
 
 #include <vector>
 #include <atomic>
@@ -41,4 +41,4 @@ namespace crisp
   }
 }
 
-#endif	/* input_Controller_hh */
+#endif	/* crisp_input_Controller_hh */

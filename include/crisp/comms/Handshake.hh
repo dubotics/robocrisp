@@ -1,5 +1,5 @@
-#ifndef Robot_Handshake_hh
-#define Robot_Handshake_hh 1
+#ifndef crisp_comms_Handshake_hh
+#define crisp_comms_Handshake_hh 1
 
 /* #include "ProtocolNode.hh" */
 #include <crisp/comms/common.hh>
@@ -92,4 +92,4 @@ namespace crisp
 }
 
 
-#endif	/* Robot_Handshake_hh */
+#endif	/* crisp_comms_Handshake_hh */

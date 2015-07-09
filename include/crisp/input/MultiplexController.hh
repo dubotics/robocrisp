@@ -1,5 +1,5 @@
-#ifndef MultiplexController_hh
-#define MultiplexController_hh 1
+#ifndef crisp_input_MultiplexController_hh
+#define crisp_input_MultiplexController_hh 1
 
 #include <crisp/input/Controller.hh>
 #include <vector>
@@ -28,4 +28,4 @@ namespace crisp
 }
 
 
-#endif  /* MultiplexController_hh */
+#endif  /* crisp_input_MultiplexController_hh */

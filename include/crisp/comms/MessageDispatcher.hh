@@ -1,5 +1,5 @@
-#ifndef Robot_MessageDispatcher_hh
-#define Robot_MessageDispatcher_hh 1
+#ifndef crisp_comms_MessageDispatcher_hh
+#define crisp_comms_MessageDispatcher_hh 1
 
 #include <crisp/comms/Message.hh>
 #include <crisp/comms/MessageHandler.hh>
@@ -102,4 +102,4 @@ namespace crisp
 #include <crisp/comms/bits/MessageDispatcher.tcc>
 
 
-#endif	/* Robot_MessageDispatcher_hh */
+#endif	/* crisp_comms_MessageDispatcher_hh */

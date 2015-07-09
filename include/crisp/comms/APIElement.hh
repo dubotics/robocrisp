@@ -1,5 +1,5 @@
-#ifndef APIElement_hh
-#define APIElement_hh 1
+#ifndef crisp_comms_APIElement_hh
+#define crisp_comms_APIElement_hh 1
 
 #ifndef BOOST_PARAMETER_MAX_ARITY
 #define BOOST_PARAMETER_MAX_ARITY 20
@@ -84,4 +84,4 @@ namespace crisp
   }
 }
 
-#endif	/* APIElement_hh */
+#endif	/* crisp_comms_APIElement_hh */

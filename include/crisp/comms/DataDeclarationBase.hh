@@ -1,5 +1,5 @@
-#ifndef DataDeclarationBase_hh
-#define DataDeclarationBase_hh 1
+#ifndef crisp_comms_DataDeclarationBase_hh
+#define crisp_comms_DataDeclarationBase_hh 1
 
 #include <crisp/comms/common.hh>
 #include <crisp/comms/Buffer.hh>
@@ -639,4 +639,4 @@ namespace crisp
   }
 }
 
-#endif	/* DataDeclarationBase_hh */
+#endif	/* crisp_comms_DataDeclarationBase_hh */

@@ -1,5 +1,5 @@
-#ifndef DataStructure_hh
-#define DataStructure_hh 1
+#ifndef crisp_comms_DataStructure_hh
+#define crisp_comms_DataStructure_hh 1
 
 #include <support/SArray.hh>
 #include <initializer_list>
@@ -50,4 +50,4 @@ namespace crisp
   }
 }
 
-#endif	/* DataStructure_hh */
+#endif	/* crisp_comms_DataStructure_hh */

@@ -1,5 +1,5 @@
-#ifndef ModuleInput_hh
-#define ModuleInput_hh 1
+#ifndef crisp_comms_ModuleInput_hh
+#define crisp_comms_ModuleInput_hh 1
 
 #include <crisp/comms/decl-defn-macros.hh>
 #include <crisp/comms/DataDeclaration.hh>
@@ -174,4 +174,4 @@ namespace crisp
   }
 }
 
-#endif	/* ModuleInput_hh */
+#endif	/* crisp_comms_ModuleInput_hh */

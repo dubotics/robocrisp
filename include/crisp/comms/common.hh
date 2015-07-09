@@ -1,5 +1,5 @@
-#ifndef common_hh
-#define common_hh 1
+#ifndef crisp_comms_common_hh
+#define crisp_comms_common_hh 1
 
 #include <cstdint>
 #include <cstddef>
@@ -97,4 +97,4 @@ namespace crisp
   }
 }
 
-#endif	/* common_hh */
+#endif	/* crisp_comms_common_hh */

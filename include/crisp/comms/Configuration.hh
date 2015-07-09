@@ -1,5 +1,5 @@
-#ifndef Configuration_hh
-#define Configuration_hh 1
+#ifndef crisp_comms_Configuration_hh
+#define crisp_comms_Configuration_hh 1
 
 /* #include <cassert> */
 #include <crisp/comms/common.hh>
@@ -97,4 +97,4 @@ namespace crisp
 #  undef Module
 #endif
 
-#endif	/* Configuration_hh */
+#endif	/* crisp_comms_Configuration_hh */

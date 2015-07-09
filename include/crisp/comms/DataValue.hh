@@ -1,5 +1,5 @@
-#ifndef DataValue_hh
-#define DataValue_hh 1
+#ifndef crisp_comms_DataValue_hh
+#define crisp_comms_DataValue_hh 1
 
 #include <type_traits>
 #include <crisp/comms/config.h>
@@ -121,4 +121,4 @@ namespace crisp
   }
 }
 
-#endif	/* DataValue_hh */
+#endif	/* crisp_comms_DataValue_hh */

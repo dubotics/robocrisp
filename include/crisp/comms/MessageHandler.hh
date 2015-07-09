@@ -3,8 +3,8 @@
  * Defines several classes used to manage user-defined handlers for message
  * send/receive events.
  */
-#ifndef MessageHandler_hh
-#define MessageHandler_hh 1
+#ifndef crisp_comms_MessageHandler_hh
+#define crisp_comms_MessageHandler_hh 1
 
 #include <type_traits>
 #include <crisp/util/Signal.hh>
@@ -149,4 +149,4 @@ namespace crisp
   }
 }
 
-#endif	/* MessageHandler_hh */
+#endif	/* crisp_comms_MessageHandler_hh */

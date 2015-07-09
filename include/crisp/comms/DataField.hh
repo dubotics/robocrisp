@@ -1,5 +1,5 @@
-#ifndef DataField_hh
-#define DataField_hh 1
+#ifndef crisp_comms_DataField_hh
+#define crisp_comms_DataField_hh 1
 
 #include <crisp/comms/DataDeclaration.hh>
 
@@ -90,4 +90,4 @@ namespace crisp
   }
 }
 
-#endif	/* DataField_hh */
+#endif	/* crisp_comms_DataField_hh */

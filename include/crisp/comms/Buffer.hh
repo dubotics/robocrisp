@@ -1,5 +1,5 @@
-#ifndef Buffer_hh
-#define Buffer_hh 1
+#ifndef crisp_comms_Buffer_hh
+#define crisp_comms_Buffer_hh 1
 
 #include <cstring>
 #include <cstdlib>
@@ -139,4 +139,4 @@ namespace crisp
   }
 }
 
-#endif	/* Buffer_hh */
+#endif	/* crisp_comms_Buffer_hh */

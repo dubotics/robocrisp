@@ -1,5 +1,5 @@
-#ifndef decl_defn_macros_hh
-#define decl_defn_macros_hh 1
+#ifndef crisp_comms_decl_defn_macros_hh
+#define crisp_comms_decl_defn_macros_hh 1
 
 #include <cstdio>
 #include <crisp/comms/Buffer.hh>
@@ -157,4 +157,4 @@
 
 
 
-#endif	/* decl_defn_macros_hh */
+#endif	/* crisp_comms_decl_defn_macros_hh */

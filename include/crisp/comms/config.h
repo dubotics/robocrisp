@@ -1,5 +1,5 @@
-#ifndef config_h
-#define config_h 1
+#ifndef crisp_comms_config_h
+#define crisp_comms_config_h 1
 
 #define MODULE_MAX_INPUTS 15
 
@@ -22,4 +22,4 @@
     freeing the message-body object. */
 #define MESSAGE_HANDLER_SIGNAL_FREE_DELAY 1
 
-#endif	/* config_h */
+#endif	/* crisp_comms_config_h */

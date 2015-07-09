@@ -1,5 +1,5 @@
-#ifndef ModuleControl_hh
-#define ModuleControl_hh 1
+#ifndef crisp_comms_ModuleControl_hh
+#define crisp_comms_ModuleControl_hh 1
 
 #include <cstddef>
 #include <cstdint>
@@ -194,4 +194,4 @@ namespace crisp
 
   }
 }
-#endif	/* ModuleControl_hh */
+#endif	/* crisp_comms_ModuleControl_hh */

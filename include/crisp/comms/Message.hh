@@ -1,5 +1,5 @@
-#ifndef Message_hh
-#define Message_hh 1
+#ifndef crisp_comms_Message_hh
+#define crisp_comms_Message_hh 1
 
 
 #include <cassert>
@@ -187,4 +187,4 @@ namespace crisp
 
 /**@}*/
 
-#endif	/* Message_hh */
+#endif	/* crisp_comms_Message_hh */

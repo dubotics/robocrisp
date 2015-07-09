@@ -1,5 +1,5 @@
-#ifndef ArrayAccessor_hh
-#define ArrayAccessor_hh 1
+#ifndef crisp_util_ArrayAccessor_hh
+#define crisp_util_ArrayAccessor_hh 1
 
 #include <vector>
 #include <cstddef>
@@ -163,4 +163,4 @@ struct DereferencedIterator : _Base
 
 
 
-#endif	/* ArrayAccessor_hh */
+#endif	/* crisp_util_ArrayAccessor_hh */

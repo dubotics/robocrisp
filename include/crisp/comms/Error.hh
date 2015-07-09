@@ -1,5 +1,5 @@
-#ifndef Robot_Error_hh
-#define Robot_Error_hh 1
+#ifndef crisp_comms_Error_hh
+#define crisp_comms_Error_hh 1
 
 namespace crisp
 {
@@ -20,4 +20,4 @@ namespace crisp
   }
 }
 
-#endif	/* Robot_Error_hh */
+#endif	/* crisp_comms_Error_hh */

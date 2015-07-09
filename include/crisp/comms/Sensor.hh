@@ -1,5 +1,5 @@
-#ifndef Sensor_hh
-#define Sensor_hh 1
+#ifndef crisp_comms_Sensor_hh
+#define crisp_comms_Sensor_hh 1
 
 #include <crisp/comms/DataDeclaration.hh>
 #include <crisp/comms/common.hh>
@@ -166,4 +166,4 @@ namespace crisp
   }
 }
 
-#endif	/* Sensor_hh */
+#endif	/* crisp_comms_Sensor_hh */

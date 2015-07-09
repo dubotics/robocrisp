@@ -1,5 +1,5 @@
-#ifndef input_EvDevController_hh
-#define input_EvDevController_hh 1
+#ifndef crisp_input_EvDevController_hh
+#define crisp_input_EvDevController_hh 1
 
 #include <system_error>
 #include <unordered_map>
@@ -72,4 +72,4 @@ namespace crisp
     };
   }
 }
-#endif	/* input_EvDevController_hh */
+#endif	/* crisp_input_EvDevController_hh */

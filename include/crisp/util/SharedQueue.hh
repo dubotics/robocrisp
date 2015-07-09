@@ -3,8 +3,8 @@
  * Defines a `SharedQueue` container class inherited from std::queue for
  * multi-threaded access.
  */
-#ifndef SharedQueue_hh
-#define SharedQueue_hh 1
+#ifndef crisp_util_SharedQueue_hh
+#define crisp_util_SharedQueue_hh 1
 
 #include <condition_variable>
 #include <mutex>
@@ -178,4 +178,4 @@ namespace crisp
   }
 }
 
-#endif	/* SharedQueue_hh */
+#endif	/* crisp_util_SharedQueue_hh */

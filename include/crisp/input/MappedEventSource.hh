@@ -1,5 +1,5 @@
-#ifndef input_MappedEventSource_hh
-#define input_MappedEventSource_hh 1
+#ifndef crisp_input_MappedEventSource_hh
+#define crisp_input_MappedEventSource_hh 1
 
 #include <crisp/util/Signal.hh>
 
@@ -117,4 +117,4 @@ namespace crisp
     };
   }
 }
-#endif	/* input_MappedEventSource_hh */
+#endif	/* crisp_input_MappedEventSource_hh */

@@ -1,5 +1,5 @@
-#ifndef DataDeclaration_hh
-#define DataDeclaration_hh 1
+#ifndef crisp_comms_DataDeclaration_hh
+#define crisp_comms_DataDeclaration_hh 1
 
 #ifndef BOOST_PARAMETER_MAX_ARITY
 #define BOOST_PARAMETER_MAX_ARITY 20
@@ -151,4 +151,4 @@ namespace crisp
 
 #include <crisp/comms/DataDeclarationBase.hh>
 
-#endif	/* DataDeclaration_hh */
+#endif	/* crisp_comms_DataDeclaration_hh */
