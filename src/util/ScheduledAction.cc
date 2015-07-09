@@ -88,8 +88,26 @@ namespace crisp
     }
 
     void
+    ScheduledAction::reset(ScheduledAction::Duration duration, ScheduledAction::Function function)
+    {
+      m_function = function;
+      m_timer->expires_from_now(duration);
+      m_timer->async_wait(std::bind(&ScheduledAction::timer_expiry_handler, this,
+                                    std::placeholders::_1));
+    }
+
+    void
     ScheduledAction::reset(ScheduledAction::TimePoint when)
     {
+      m_timer->expires_at(when);
+      m_timer->async_wait(std::bind(&ScheduledAction::timer_expiry_handler, this,
+                                    std::placeholders::_1));
+    }
+
+    void
+    ScheduledAction::reset(ScheduledAction::TimePoint when, ScheduledAction::Function function)
+    {
+      m_function = function;
       m_timer->expires_at(when);
       m_timer->async_wait(std::bind(&ScheduledAction::timer_expiry_handler, this,
                                     std::placeholders::_1));

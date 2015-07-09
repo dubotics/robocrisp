@@ -65,6 +65,17 @@ namespace crisp
        */
       void reset(Duration duration);
 
+      /** Reschedule the timer to expire after the specified duration, calling
+       * a different handler function.  If called while the timer is running,
+       * the previously-scheduled invocation of the user callback will
+       * be canceled.
+       *
+       * @param duration Time after which the timer should expire.
+       *
+       * @param function New handler function.
+       */
+      void reset(Duration duration, Function function);
+
       /** Reschedule the timer to expire at the specified time.  If called while
        * the timer is running, the previously-scheduled invocation of the user
        * callback will be canceled.
@@ -72,6 +83,17 @@ namespace crisp
        * @param when Time at which the timer should expire.
        */
       void reset(TimePoint when);
+
+      /** Reschedule the timer to expire at the specified time, calling
+       * a different handler function.  If called while the timer is running,
+       * the previously-scheduled invocation of the user callback will
+       * be canceled.
+       *
+       * @param when Time at which the timer should expire.
+       *
+       * @param function New handler function.
+       */
+      void reset(TimePoint when, Function function);
 
       /** Cancel the action.  If called before the timer expires, this will
        *  prevent the user callback from being called.
