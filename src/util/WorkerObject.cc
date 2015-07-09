@@ -47,7 +47,7 @@ namespace crisp
         thread = std::thread([&]()
                              {
                                while ( ! should_halt )
-                                 service.run_one();
+                                 service.run();
                              });
       return ! running;
     }
@@ -69,7 +69,8 @@ namespace crisp
     
     WorkerObject::WorkerObject(boost::asio::io_service& _io_service, size_t pool_size)
       : m_io_service ( _io_service ),
-        m_worker_threads ( pool_size )
+        m_worker_threads ( pool_size ),
+        m_thread_waiter ( NULL )
     {}
 
     WorkerObject::~WorkerObject()
@@ -86,9 +87,12 @@ namespace crisp
     {
       bool can_launch ( m_worker_threads.size < m_worker_threads.capacity );
 
-      if ( can_launch )
+      if ( can_launch ) {
+        m_thread_waiter.reset(new boost::asio::io_service::work(m_io_service));
+
         for ( size_t i ( m_worker_threads.size ); i < m_worker_threads.capacity; ++i )
           m_worker_threads.emplace().launch(m_io_service);
+      }
 
       return can_launch;
     }
@@ -139,6 +143,7 @@ namespace crisp
 
       if ( canhalt )
         {
+          m_thread_waiter.reset();
           /* WARNING: disgusting hack follows :) */
 
           /* start a thread that:

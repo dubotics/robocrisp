@@ -56,6 +56,11 @@ namespace crisp
       /** Handles to the worker threads. */
       crisp::util::SArray<WorkerThread> m_worker_threads;
 
+      /** Object that causes calls to the IO-service's `run` method to block
+          until it is destroyed or the service is stopped.  This keeps worker
+          threads ready to spring into action whenever new work arrives. */
+      std::auto_ptr<boost::asio::io_service::work> m_thread_waiter;
+
     public:
       /** Constructor. */
       WorkerObject(boost::asio::io_service& _io_service, size_t pool_size);
