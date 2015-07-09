@@ -23,13 +23,22 @@ namespace crisp
        */
       typedef std::function<void(PeriodicAction& action)> Function;
 	
+#ifdef SWIG
+      %immutable;
+#endif
       PeriodicScheduleSlot* slot; /**< Pointer to the schedule slot that
                                      contains this action.  This is used by
                                      `pause`, `unpause`, and `cancel`. */
 
+#ifdef SWIG
+      %immutable;
+#endif
       Function function;	/**< User-defined function to be called by the
 				   slot. */
 
+#ifdef SWIG
+      %immutable;
+#endif
       bool active;              /**< When `true`, the slot will continue to
                                    enqueue timer waits on behalf of the action. */
 
