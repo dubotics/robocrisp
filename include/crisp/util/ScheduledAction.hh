@@ -32,7 +32,7 @@ namespace crisp
 
     private:
       friend class Scheduler;
-      friend class std::hash<ScheduledAction>;
+      friend struct std::hash<ScheduledAction>;
 
 #ifndef SWIG
 # if defined(_LIBCPP_VERSION)

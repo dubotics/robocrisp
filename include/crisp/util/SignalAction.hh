@@ -42,7 +42,7 @@ namespace crisp
 
     private:
       friend class crisp::util::Signal<Return(Args...)>;
-      friend class std::hash<SignalAction>;
+      friend struct std::hash<SignalAction>;
 
       /** A reference to the signal that owns this action. */
       Signal& m_signal;
